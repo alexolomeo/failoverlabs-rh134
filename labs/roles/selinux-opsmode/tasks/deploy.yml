@@ -1,0 +1,30 @@
+---
+  
+#- name: "{{ gazella_project|upper }} {{ gazella_environment|upper }} SERVER DEPLOY - Deploy application as a systemd service on target system."
+#  become: yes
+#  ansible.builtin.shell: bash /opt/jboss/bin/jboss-cli.sh --connect --command="undeploy *.war" || true
+
+- name: "{{ gazella_project|upper }} {{ gazella_environment|upper }} SERVER DEPLOY - Stop service wildfly"
+  become: yes
+  ansible.builtin.systemd_service:
+    state: stopped
+    name: wildfly
+
+- name: "{{ gazella_project|upper }} {{ gazella_environment|upper }} SERVER DEPLOY - Remove all deploy file from wildfly."
+  ansible.builtin.shell: rm -rf /opt/wildfly/standalone/deployments/*
+
+- name: "{{ gazella_project|upper }} {{ gazella_environment|upper }} SERVER DEPLOY - Remove all termporal files from wildfly."
+  become: yes
+  ansible.builtin.shell: rm -rf /opt/wildfly/standalone/tmp
+
+- name: "{{ gazella_project|upper }} {{ gazella_environment|upper }} SERVER DEPLOY - Deploy new package "
+  ansible.builtin.shell: "cp {{ gazella_remote_workdir }}/{{ gazella_project }}_{{ gazella_environment }}_build_{{ gazella_number_build }}/*.war /opt/wildfly/standalone/deployments"
+
+- name: "{{ gazella_project|upper }} {{ gazella_environment|upper }} SERVER DEPLOY - Start service wildfly"
+  become: yes
+  ansible.builtin.systemd_service:
+    state: started
+    name: wildfly
+
+#- name: "{{ gazella_project|upper }} {{ gazella_environment|upper }} SERVER DEPLOY - Verify that deployment is functional."
+#  ansible.builtin.include_tasks: validate_deployment.yml

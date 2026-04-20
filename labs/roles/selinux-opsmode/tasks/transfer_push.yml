@@ -1,0 +1,38 @@
+---
+
+- name: "push file to remote host {{ gazella_project }} {{ gazella_environment }}"
+  block:
+
+    - name: "{{ gazella_project|upper }} {{ gazella_environment|upper }} SERVER - PUSH PACKAGE - Checking gazella_number_build from tranfer_push.yml"
+      debug:
+        msg: "gazella_number_build is {{ gazella_number_build }}"
+
+    - name: "{{ gazella_project|upper }} {{ gazella_environment|upper }} SERVER - Create remote directory exists: {{ gazella_remote_workdir }}"
+      become_user: "{{ gazella_remote_user }}"
+      ansible.builtin.file:
+        path: "{{ gazella_remote_workdir }}"
+        state: directory
+        owner: "{{ gazella_remote_user }}"
+        group: "{{ gazella_remote_group }}"
+        mode: 0775
+        force: yes
+
+    - name: "{{ gazella_project|upper }} {{ gazella_environment|upper }} SERVER - Copy the file from master to gazellacom"
+      ansible.builtin.copy:
+        src: "buffer/{{ gazella_project }}_{{ gazella_environment }}_build_{{ gazella_number_build }}.tar.gz"
+        dest: "{{ gazella_remote_workdir }}/{{ gazella_project }}_{{ gazella_environment }}_build_{{ gazella_number_build }}.tar.gz"
+
+    - name: "{{ gazella_project|upper }} {{ gazella_environment|upper }} SERVER - Unarchive deploy: {{ gazella_remote_workdir }}"
+      ansible.builtin.unarchive:
+        src: "{{ gazella_remote_workdir }}/{{ gazella_project }}_{{ gazella_environment }}_build_{{ gazella_number_build }}.tar.gz"
+        dest: "{{ gazella_remote_workdir }}"
+        remote_src: yes
+
+    - name: "{{ gazella_project|upper }} {{ gazella_environment|upper }} SERVER - Delete compress {{ gazella_remote_workdir }}/build_{{ gazella_number_build }}.tar.gz"
+      ansible.builtin.file:
+        path: "{{ gazella_remote_workdir }}/{{ gazella_project }}_{{ gazella_environment }}_build_{{ gazella_number_build }}.tar.gz"
+        state: absent
+      ignore_errors: yes
+
+#  when: ( inventory_hostname == 'com-integration') or ( inventory_hostname == 'com-production')
+

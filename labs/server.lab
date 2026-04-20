@@ -1,0 +1,16 @@
+[workstation]
+workstation01 ansible_host=workstation
+[workstation:vars]
+ansible_user=root
+
+
+[servera]
+servera01 ansible_host=servera
+[servera:vars]
+ansible_user=root
+
+
+[serverb]
+serverb01 ansible_host=serverb
+[serverb:vars]
+ansible_user=root

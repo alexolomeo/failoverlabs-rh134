@@ -1,0 +1,86 @@
+#!/bin/bash
+
+MAINPATH=/usr/local/rh134
+LABS_DIR="$MAINPATH/labs"
+
+#LABS_DIR="$(dirname "$0")/labs"
+
+ACTION="$1"
+LAB_NAME="$2"
+LAB_PATH="$LABS_DIR/$LAB_NAME"
+
+# Función para listar labs
+list_labs() {
+    echo "Labs disponibles:"
+    for lab in "$LABS_DIR"/*/; do
+        if [[ -d "$lab" ]]; then
+            echo "- $(basename "$lab")"
+        fi
+    done
+}
+
+# Validación básica
+if [[ -z "$ACTION" ]]; then
+    echo "Uso: lab {start|grade|finish|list|info} <nombre-del-lab>"
+    exit 1
+fi
+
+LOG_FILE="/var/log/labtool.log"
+
+log_action() {
+    local action="$1"
+    local lab_name="$2"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Acción: $action, Lab: $lab_name" >> "$LOG_FILE"
+}
+
+# Llamada a log_action en cada acción
+case "$ACTION" in
+    start)
+        log_action "start" "$LAB_NAME"
+        if [[ -x "$LAB_PATH/setup.sh" ]]; then
+            echo "Iniciando laboratorio: $LAB_NAME"
+            "$LAB_PATH/setup.sh"
+        else
+            echo "No hay script de inicio (setup.sh)"
+        fi
+        ;;
+    grade)
+        log_action "grade" "$LAB_NAME"
+        if [[ -x "$LAB_PATH/grade.sh" ]]; then
+            echo "Evaluando laboratorio: $LAB_NAME"
+            "$LAB_PATH/grade.sh"
+        else
+            echo "No hay script de evaluación (grade.sh)"
+        fi
+        ;;
+    finish)
+        log_action "finish" "$LAB_NAME"
+        if [[ -x "$LAB_PATH/cleanup.sh" ]]; then
+            echo "Finalizando laboratorio: $LAB_NAME"
+            "$LAB_PATH/cleanup.sh"
+        else
+            echo "No hay script de limpieza (cleanup.sh)"
+        fi
+        ;;
+    list)
+        log_action "list" "N/A"
+        list_labs
+        ;;
+    info)
+        log_action "info" "$LAB_NAME"
+        if [[ -d "$LAB_PATH" ]]; then
+            echo "Información sobre el lab '$LAB_NAME':"
+            if [[ -f "$LAB_PATH/instructions.txt" ]]; then
+                cat "$LAB_PATH/instructions.txt"
+            else
+                echo "No hay instrucciones disponibles para este laboratorio."
+            fi
+        else
+            echo "El laboratorio '$LAB_NAME' no existe."
+        fi
+        ;;
+    *)
+        echo "Acción inválida: $ACTION"
+        exit 1
+        ;;
+esac

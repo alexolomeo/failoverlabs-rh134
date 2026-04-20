@@ -1,0 +1,28 @@
+---
+
+- name: "Starting Configuration Remote Server."
+  block:
+
+    - name: Configurar failover_number en servera
+      debug:
+        msg: "========== La variable failover_number es: {{ failover_number }} ============="
+      when: inventory_hostname in groups['servera']
+
+    - name: "START CONFIG LAB - Ensure app workdir exists: {{ failover_remote_workdir_simulate }}/{{ failover_number }}"
+      become: yes
+      ansible.builtin.file:
+        path: "{{ failover_remote_workdir_simulate }}/{{ failover_number }}"
+        state: directory
+        mode: 0775
+        force: yes
+
+    - name: "START CONFIG LAB - Ensure app workdir exists: {{ failover_remote_workdir_exam }}/{{ failover_number }}"
+      become: yes
+      ansible.builtin.file:
+        path: "{{ failover_remote_workdir_exam }}/{{ failover_number }}"
+        state: directory
+        mode: 0775
+        force: yes
+
+  when: failover_remote_environment == "servera"
+

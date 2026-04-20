@@ -1,0 +1,46 @@
+---
+
+- name: "Workstation"
+  block:
+    - include_tasks: start_workstation.yml
+      when: failover_environment == "workstation"
+  when: 
+    - failover_mode == "start"  
+    - failover_environment == "workstation"  
+
+- name: "Servera"
+  block:
+    - include_tasks: start_servera.yml
+      when: failover_remote_environment == "servera"
+
+    - include_tasks: start_validate.yml
+      when: failover_remote_environment == "servera"
+  when: 
+    - failover_mode == "start"  
+    - failover_remote_environment == "servera"  
+
+- name: "Simulate lab"
+  block:
+    - include_tasks: simulate.yml
+
+  when: 
+    - failover_mode == "simulate"  
+    - failover_remote_environment == "servera"  
+
+- name: "Grade lab"
+  block:
+    - include_tasks: grade.yml
+
+  when: 
+    - failover_mode == "grade"  
+    - failover_remote_environment == "servera"  
+
+
+- name: "Finish lab"
+  block:
+    - include_tasks: clean.yml
+
+  when: 
+    - failover_mode == "grade"  
+    - failover_remote_environment == "servera"  
+

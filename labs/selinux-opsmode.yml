@@ -1,0 +1,26 @@
+---
+
+- name: selinux opsmode
+  hosts: workstation
+  become: true
+  vars: 
+    failover_mode: "start"
+  roles:
+    - role: selinux-opsmode
+      failover_project: selinux-opsmode               # lab <failover_mode> <failover_project>
+      failover_environment: "workstation"               # workstation, servera serverb 
+      failover_user: root 
+      failover_group: root
+
+
+- name: selinux opsmode
+  hosts: servera
+  become: true
+  vars: 
+    failover_mode: "start"
+  roles:
+    - role: selinux-opsmode
+      failover_remote_project: selinux-opsmode
+      failover_remote_environment: "servera"              # workstation, servera serverb 
+      failover_remote_user: root
+      failover_remote_group: root

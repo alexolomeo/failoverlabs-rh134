@@ -1,0 +1,104 @@
+---
+
+- name: SIMULATE LAB - Reiniciar el sistema para velidar  SELINUX
+  ansible.builtin.reboot:
+    reboot_timeout: 600
+    test_command:  "getenforce"
+
+- name: SIMULATE LAB - Leer el archivo /etc/selinux/config para verificar SELINUX=enforcing
+  ansible.builtin.slurp:
+    src: /etc/selinux/config
+  register: config_file
+  changed_when: false
+
+- name: SIMULATE LAB - Verificar SELINUX=enforcing si esta en /etc/selinux/config
+  ansible.builtin.command:
+    cmd: echo "selinux:success:Enforcing" >> /tmp/selinux-opsmode/simulate.log
+  when: "'SELINUX=enforcing' in config_file.content | b64decode" 
+
+- name: SIMULATE LAB - Verificar SELINUX=enforcing no esta en /etc/selinux/config
+  ansible.builtin.command:
+    cmd: echo "selinux:failed:Enforcing" >> /tmp/selinux-opsmode/simulate.log
+  when: "'SELINUX=enforcing' in config_file.content | b64decode" 
+
+
+
+- name: Verificar que getenforce devuelva "Enforcing"
+  ansible.builtin.command:
+    cmd: getenforce
+  register: getenforce_output
+  changed_when: false
+
+- name: Validar que la salida de getenforce sea "Enforcing"
+  ansible.builtin.command:
+    cmd: echo "getenforce:success:Enforcing" >> /tmp/selinux-opsmode/simulate.log
+  when: getenforce_output.stdout == "Enforcing" 
+
+- name: Validar que la salida de getenforce sea distinto "Enforcing"
+  ansible.builtin.command:
+    cmd: echo "getenforce:failed:Enforcing" >> /tmp/selinux-opsmode/simulate.log
+  when: getenforce_output.stdout != "Enforcing" 
+
+
+
+- name: Obtener historial de comandos
+  ansible.builtin.shell: "history"
+  register: history_output
+
+- name: Validar si getenforce aparece correctamente en el historial
+  ansible.builtin.command:
+    cmd: echo "history:success:getenforce" >> /tmp/selinux-opsmode/simulate.log
+  when: history_output.stdout | regex_search('^\s*\d+\s+getenforce')
+
+- name: Validar si setenforce 1 aparece correctamente en el historial
+  ansible.builtin.command:
+    cmd: echo "history:success:setenforce 1" >> /tmp/selinux-opsmode/simulate.log
+  when: history_output.stdout | regex_search('^\s*\d+\s+setenforce 1')
+
+- name: Validar si setenforce 0 aparece correctamente en el historial
+  ansible.builtin.command:
+    cmd: echo "history:success:setenforce 0" >> /tmp/selinux-opsmode/simulate.log
+  when: history_output.stdout | regex_search('^\s*\d+\s+setenforce 0')
+
+- name: Validar si systecmctl reboot aparece correctamente en el historial
+  ansible.builtin.command:
+    cmd: echo "history:success:systecmctl reboot" >> /tmp/selinux-opsmode/simulate.log
+  when: history_output.stdout | regex_search('^\s*\d+\s+systecmctl reboot')
+
+
+- name: Validar si getenforce aparece correctamente en el historial
+  ansible.builtin.command:
+    cmd: echo "history:failed:getenforce" >> /tmp/selinux-opsmode/simulate.log
+  when: not(history_output.stdout | regex_search('^\s*\d+\s+getenforce'))
+
+- name: Validar si setenforce 1 aparece correctamente en el historial
+  ansible.builtin.command:
+    cmd: echo "history:failed:setenforce 1" >> /tmp/selinux-opsmode/simulate.log
+  when: not(history_output.stdout | regex_search('^\s*\d+\s+setenforce 1'))
+
+- name: Validar si setenforce 0 aparece correctamente en el historial
+  ansible.builtin.command:
+    cmd: echo "history:failed:setenforce 0" >> /tmp/selinux-opsmode/simulate.log
+  when: not (history_output.stdout | regex_search('^\s*\d+\s+setenforce 0'))
+
+- name: Validar si systecmctl reboot aparece correctamente en el historial
+  ansible.builtin.command:
+    cmd: echo "history:failed:systecmctl reboot" >> /tmp/selinux-opsmode/simulate.log
+  when: not (history_output.stdout | regex_search('^\s*\d+\s+systecmctl reboot'))
+
+
+- name: Obtener log de reboot desde "journalclt"
+  ansible.builtin.command:
+    cmd: journalctl --since '-15min' | grep "The system will reboot now"
+  register: reboot_output
+  changed_when: false
+
+- name: Verificar Log si existe reboot en el "journalclt"
+  ansible.builtin.command:
+    cmd: echo "reboot:success:The system will reboot now" >> /tmp/selinux-opsmode/simulate.log
+  when: "'The system will reboot now' in reboot_output.content | b64decode"
+
+- name: Verificar Log si no existe reboot en el "journalclt"
+  ansible.builtin.command:
+    cmd: echo "reboot:failed:The system will not reboot" >> /tmp/selinux-opsmode/simulate.log
+  when: "'The system will reboot now' not in reboot_output.content | b64decode"

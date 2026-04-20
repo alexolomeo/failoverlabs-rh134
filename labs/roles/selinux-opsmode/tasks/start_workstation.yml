@@ -1,0 +1,88 @@
+---
+
+- name: "Starting Configuration Workstatiion"
+  block:
+
+    - name: "START CONFIG LAB - Ensure app sequences exists: {{ failover_sequence }}"
+      become: yes
+      ansible.builtin.file:
+        path: "{{ failover_sequence }}"
+        state: directory
+        mode: 0775
+        force: yes
+
+    - name: "START CONFIG LAB - Touch if dont exist {{ failover_sequence_file }}"
+      become: yes
+      ansible.builtin.file:
+        path: "{{ failover_sequence_file }}"
+        state: touch
+        mode: u+rw,g-wx,o-rwx
+        modification_time: preserve
+        access_time: preserve
+
+    - name: START CONFIG LAB - Print message if ansible version is greater than 2.7.0
+      debug:
+        msg: "Ansible version is  {{ ansible_version.full }}"
+
+    - name: "START CONFIG LAB - Read file and put variable from {{ failover_sequence_file }} "
+      ansible.builtin.command: "cat {{ failover_sequence_file }}"
+      ignore_errors: true
+      changed_when: false
+      register: failover_number_read
+      become: yes
+
+    - name: "START CONFIG LAB - Set global variable failover_number"
+      ansible.builtin.set_fact:
+        failover_number: "{{ failover_number_read.stdout }}"
+
+    - name: "START CONFIG LAB - Increment variable failover_number = {{ failover_number | int + 1 }}"
+      ansible.builtin.set_fact:
+        failover_number={{ failover_number | int + 1 }}
+
+    - name: "START CONFIG LAB - set sequence file {{ failover_sequence_file }} to {{ failover_number }}"
+      become: yes
+      ansible.builtin.shell: "echo {{ failover_number }} > {{ failover_sequence_file }}"
+
+    - name: "START CONFIG LAB - Ensure app workdir exists: {{ failover_workdir_simulate }}/{{ failover_number }}"
+      become: yes
+      ansible.builtin.file:
+        path: "{{ failover_workdir_simulate }}/{{ failover_number }}"
+        state: directory
+        mode: 0775
+        force: yes
+
+    - name: "START CONFIG LAB - Ensure app workdir exists: {{ failover_workdir_simulate_eval }}/{{ failover_number }}"
+      become: yes
+      ansible.builtin.file:
+        path: "{{ failover_workdir_simulate_eval }}/{{ failover_number }}"
+        state: directory
+        mode: 0775
+        force: yes
+
+    - name: "START CONFIG LAB - Ensure app workdir exists: {{ failover_workdir_exam }}/{{ failover_number }}"
+      become: yes
+      ansible.builtin.file:
+        path: "{{ failover_workdir_exam }}/{{ failover_number }}"
+        state: directory
+        mode: 0775
+        force: yes
+
+    - name: "START CONFIG LAB - Ensure app workdir exists: {{ failover_workdir_exam_eval }}/{{ failover_number }}"
+      become: yes
+      ansible.builtin.file:
+        path: "{{ failover_workdir_exam_eval }}/{{ failover_number }}"
+        state: directory
+        mode: 0775
+        force: yes
+
+    - name: START CONFIG LAB - Set to delegate variable from workstation to servera
+      set_fact:
+        failover_number: "{{ failover_number }}"
+      delegate_facts: yes
+      delegate_to: "{{ groups['servera'][0] }}"
+
+      #delegate_to: "{{ item }}"
+      #loop: "{{ groups['servera'] }}"
+
+  when: failover_environment == "workstation"
+
