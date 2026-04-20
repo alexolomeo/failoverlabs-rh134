@@ -1,104 +1,141 @@
 ---
 
-- name: SIMULATE LAB - Reiniciar el sistema para velidar  SELINUX
-  ansible.builtin.reboot:
-    reboot_timeout: 600
-    test_command:  "getenforce"
+#- name: SIMULATE LAB - Reiniciar el sistema para velidar  SELINUX
+#  ansible.builtin.reboot:
+#    reboot_timeout: 600
+#    test_command:  "getenforce"
+
+- name: "SIMULATE LAB - Crear directory validator: {{ failover_remote_validator_temp }}"
+  become: yes
+  ansible.builtin.file:
+    path: "{{ failover_remote_validator_temp }}"
+    state: directory
+    mode: 0755
+
+- name: "SIMULATE LAB - Crear file validator: {{ failover_remote_validator_temp }}/simulate.log temporal"
+  become: yes
+  ansible.builtin.file:
+    path: "{{ failover_remote_validator_temp }}/simulate.log"
+    state: touch
+    mode: 0644
 
 - name: SIMULATE LAB - Leer el archivo /etc/selinux/config para verificar SELINUX=enforcing
   ansible.builtin.slurp:
     src: /etc/selinux/config
   register: config_file
-  changed_when: false
 
-- name: SIMULATE LAB - Verificar SELINUX=enforcing si esta en /etc/selinux/config
-  ansible.builtin.command:
-    cmd: echo "selinux:success:Enforcing" >> /tmp/selinux-opsmode/simulate.log
-  when: "'SELINUX=enforcing' in config_file.content | b64decode" 
+- name: SIMULATE LAB - Log de éxito (SELINUX=enforcing encontrado)
+  become: yes
+  ansible.builtin.shell: 
+    cmd: "echo '1:selinux:success:Enforcing' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: config_file.content | b64decode | regex_search('SELINUX=enforcing')
+  changed_when: true
 
-- name: SIMULATE LAB - Verificar SELINUX=enforcing no esta en /etc/selinux/config
-  ansible.builtin.command:
-    cmd: echo "selinux:failed:Enforcing" >> /tmp/selinux-opsmode/simulate.log
-  when: "'SELINUX=enforcing' in config_file.content | b64decode" 
+- name: SIMULATE LAB - Log de error (SELINUX=enforcing NO encontrado)
+  become: yes
+  ansible.builtin.shell: 
+    cmd: "echo '1:selinux:failed:Enforcing' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: not (config_file.content | b64decode | regex_search('SELINUX=enforcing'))
+  changed_when: true
 
 
-
-- name: Verificar que getenforce devuelva "Enforcing"
+- name: SIMULATE LAB - Verificar que getenforce devuelva "Enforcing"
+  become: yes
   ansible.builtin.command:
     cmd: getenforce
   register: getenforce_output
   changed_when: false
 
-- name: Validar que la salida de getenforce sea "Enforcing"
-  ansible.builtin.command:
-    cmd: echo "getenforce:success:Enforcing" >> /tmp/selinux-opsmode/simulate.log
+- name: SIMULATE LAB - Validar que la salida de getenforce sea "Enforcing"
+  become: yes
+  ansible.builtin.shell:
+    cmd: "echo '2:getenforce:success:Enforcing' >> {{ failover_remote_validator_temp }}/simulate.log"
   when: getenforce_output.stdout == "Enforcing" 
 
-- name: Validar que la salida de getenforce sea distinto "Enforcing"
-  ansible.builtin.command:
-    cmd: echo "getenforce:failed:Enforcing" >> /tmp/selinux-opsmode/simulate.log
+- name: SIMULATE LAB - Validar que la salida de getenforce sea distinto "Enforcing"
+  become: yes
+  ansible.builtin.shell:
+    cmd: "echo '2:getenforce:failed:Enforcing' >> {{ failover_remote_validator_temp }}/simulate.log"
   when: getenforce_output.stdout != "Enforcing" 
 
 
-
-- name: Obtener historial de comandos
-  ansible.builtin.shell: "history"
+- name: SIMULATE LAB - Obtener historial de comandos
+  ansible.builtin.shell: |
+    history -a  # Fuerza la escritura de la sesión actual al archivo
+    cat /root/.bash_history
   register: history_output
 
-- name: Validar si getenforce aparece correctamente en el historial
-  ansible.builtin.command:
-    cmd: echo "history:success:getenforce" >> /tmp/selinux-opsmode/simulate.log
-  when: history_output.stdout | regex_search('^\s*\d+\s+getenforce')
+- name: SIMULATE LAB - Escribir historial en archivo log
+  become: yes
+  ansible.builtin.copy:
+    content: "{{ history_output.stdout }}"
+    dest: "{{ failover_remote_validator_temp }}/history.log"
+    mode: '0644'
 
-- name: Validar si setenforce 1 aparece correctamente en el historial
-  ansible.builtin.command:
-    cmd: echo "history:success:setenforce 1" >> /tmp/selinux-opsmode/simulate.log
-  when: history_output.stdout | regex_search('^\s*\d+\s+setenforce 1')
+- name: SIMULATE LAB - Validar si getenforce aparece correctamente en el historial
+  become: yes
+  ansible.builtin.shell:
+    cmd: "echo '3:history:success:getenforce' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: history_output.stdout | regex_search('^getenforce', multiline=True)
 
-- name: Validar si setenforce 0 aparece correctamente en el historial
-  ansible.builtin.command:
-    cmd: echo "history:success:setenforce 0" >> /tmp/selinux-opsmode/simulate.log
-  when: history_output.stdout | regex_search('^\s*\d+\s+setenforce 0')
-
-- name: Validar si systecmctl reboot aparece correctamente en el historial
-  ansible.builtin.command:
-    cmd: echo "history:success:systecmctl reboot" >> /tmp/selinux-opsmode/simulate.log
-  when: history_output.stdout | regex_search('^\s*\d+\s+systecmctl reboot')
-
-
-- name: Validar si getenforce aparece correctamente en el historial
-  ansible.builtin.command:
-    cmd: echo "history:failed:getenforce" >> /tmp/selinux-opsmode/simulate.log
-  when: not(history_output.stdout | regex_search('^\s*\d+\s+getenforce'))
-
-- name: Validar si setenforce 1 aparece correctamente en el historial
-  ansible.builtin.command:
-    cmd: echo "history:failed:setenforce 1" >> /tmp/selinux-opsmode/simulate.log
-  when: not(history_output.stdout | regex_search('^\s*\d+\s+setenforce 1'))
-
-- name: Validar si setenforce 0 aparece correctamente en el historial
-  ansible.builtin.command:
-    cmd: echo "history:failed:setenforce 0" >> /tmp/selinux-opsmode/simulate.log
-  when: not (history_output.stdout | regex_search('^\s*\d+\s+setenforce 0'))
-
-- name: Validar si systecmctl reboot aparece correctamente en el historial
-  ansible.builtin.command:
-    cmd: echo "history:failed:systecmctl reboot" >> /tmp/selinux-opsmode/simulate.log
-  when: not (history_output.stdout | regex_search('^\s*\d+\s+systecmctl reboot'))
+- name: SIMULATE LAB - Validar si getenforce no aparece correctamente en el historial
+  become: yes
+  ansible.builtin.shell:
+    cmd: "echo '3:history:failed:getenforce' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: not(history_output.stdout | regex_search('^getenforce', multiline=True))
 
 
-- name: Obtener log de reboot desde "journalclt"
-  ansible.builtin.command:
-    cmd: journalctl --since '-15min' | grep "The system will reboot now"
-  register: reboot_output
-  changed_when: false
+- name: SIMULATE LAB - Validar si setenforce 1 aparece correctamente en el historial
+  become: yes
+  ansible.builtin.shell:
+    cmd: "echo '4:history:success:setenforce 1' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: history_output.stdout | regex_search('^setenforce 1', multiline=True)
 
-- name: Verificar Log si existe reboot en el "journalclt"
-  ansible.builtin.command:
-    cmd: echo "reboot:success:The system will reboot now" >> /tmp/selinux-opsmode/simulate.log
-  when: "'The system will reboot now' in reboot_output.content | b64decode"
+- name: SIMULATE LAB - Validar si setenforce 1 no aparece correctamente en el historial
+  become: yes
+  ansible.builtin.shell:
+    cmd: "echo '4:history:failed:setenforce 1' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: not(history_output.stdout | regex_search('^setenforce 1', multiline=True))
 
-- name: Verificar Log si no existe reboot en el "journalclt"
-  ansible.builtin.command:
-    cmd: echo "reboot:failed:The system will not reboot" >> /tmp/selinux-opsmode/simulate.log
-  when: "'The system will reboot now' not in reboot_output.content | b64decode"
+
+- name: SIMULATE LAB - Validar si setenforce 0 aparece correctamente en el historial
+  become: yes
+  ansible.builtin.shell:
+    cmd: "echo '5:history:success:setenforce 0' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: history_output.stdout | regex_search('^setenforce 0', multiline=True)
+
+- name: SIMULATE LAB - Validar si setenforce 0 no aparece correctamente en el historial
+  become: yes
+  ansible.builtin.shell:
+    cmd: "echo '5:history:failed:setenforce 0' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: not (history_output.stdout | regex_search('^setenforce 0', multiline=True))
+
+
+- name: SIMULATE LAB - Validar si systecmctl reboot aparece correctamente en el historial
+  become: yes
+  ansible.builtin.shell:
+    cmd: "echo '6:history:success:systemctl reboot' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: history_output.stdout | regex_search('^systemctl reboot', multiline=True)
+
+- name: SIMULATE LAB - Validar si systecmctl reboot no aparece correctamente en el historial
+  become: yes
+  ansible.builtin.shell:
+    cmd: "echo '6:history:failed:systecmctl reboot' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: not (history_output.stdout | regex_search('^systemctl reboot', multiline=True))
+
+
+#- name: SIMULATE LAB - Obtener log de reboot desde "journalclt"
+#  ansible.builtin.command:
+#    cmd: journalctl --since '-15min' | grep "The system will reboot now"
+#  register: reboot_output
+#  changed_when: false
+
+#- name: SIMULATE LAB - Verificar Log si existe reboot en el "journalclt"
+#  ansible.builtin.command:
+#    cmd: echo "reboot:success:The system will reboot now" >> /tmp/selinux-opsmode/simulate.log
+#  when: "'The system will reboot now' in reboot_output.content | b64decode"
+
+#- name: SIMULATE LAB - Verificar Log si no existe reboot en el "journalclt"
+#  ansible.builtin.command:
+#    cmd: echo "reboot:failed:The system will not reboot" >> /tmp/selinux-opsmode/simulate.log
+# when: "'The system will reboot now' not in reboot_output.content | b64decode"

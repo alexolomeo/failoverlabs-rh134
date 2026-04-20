@@ -21,7 +21,7 @@ list_labs() {
 
 # Validación básica
 if [[ -z "$ACTION" ]]; then
-    echo "Uso: lab {start|grade|finish|list|info} <nombre-del-lab>"
+    echo "Uso: lab {start|simulate|grade|finish|list|info} <nombre-del-lab>"
     exit 1
 fi
 
@@ -42,6 +42,15 @@ case "$ACTION" in
             "$LAB_PATH/setup.sh"
         else
             echo "No hay script de inicio (setup.sh)"
+        fi
+        ;;
+    simulate)
+        log_action "simulate" "$LAB_NAME"
+        if [[ -x "$LAB_PATH/grade.sh" ]]; then
+            echo "Simulador ...Evaluando laboratorio: $LAB_NAME"
+            "$LAB_PATH/simulate.sh"
+        else
+            echo "No hay script de evaluación (simulate.sh)"
         fi
         ;;
     grade)

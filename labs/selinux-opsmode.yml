@@ -2,6 +2,7 @@
 
 - name: selinux opsmode
   hosts: workstation
+  gather_facts: no
   become: true
   vars: 
     failover_mode: "start"
@@ -15,6 +16,7 @@
 
 - name: selinux opsmode
   hosts: servera
+  gather_facts: no
   become: true
   vars: 
     failover_mode: "start"

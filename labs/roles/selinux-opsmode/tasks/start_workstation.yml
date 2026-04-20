@@ -1,7 +1,25 @@
 ---
 
 - name: "Starting Configuration Workstatiion"
+
   block:
+
+
+    - name: "START CONFIG LAB - Remove directory validator: /tmp/{{ failover_validator_temp }} temporal"
+      become: yes
+      ansible.builtin.file:
+        path: "{{ failover_validator_temp }}"
+        state: absent
+        mode: 0775
+        force: yes
+          
+    - name: "START CONFIG LAB - Create directory validator: /tmp/{{ failover_validator_temp }} temporal"
+      become: yes
+      ansible.builtin.file:
+        path: "{{ failover_validator_temp }}"
+        state: directory
+        mode: 0775
+        force: yes
 
     - name: "START CONFIG LAB - Ensure app sequences exists: {{ failover_sequence }}"
       become: yes

@@ -8,6 +8,22 @@
         msg: "========== La variable failover_number es: {{ failover_number }} ============="
       when: inventory_hostname in groups['servera']
 
+    - name: "START CONFIG LAB - Remove directory validator: /tmp/{{ failover_remote_validator_temp }} temporal"
+      become: yes
+      ansible.builtin.file:
+        path: "{{ failover_remote_validator_temp }}"
+        state: absent
+        mode: 0775
+        force: yes
+
+    - name: "START CONFIG LAB - Create directory validator: /tmp/{{ failover_remote_validator_temp }} temporal"
+      become: yes
+      ansible.builtin.file:
+        path: "{{ failover_remote_validator_temp }}"
+        state: directory
+        mode: 0775
+        force: yes
+
     - name: "START CONFIG LAB - Ensure app workdir exists: {{ failover_remote_workdir_simulate }}/{{ failover_number }}"
       become: yes
       ansible.builtin.file:

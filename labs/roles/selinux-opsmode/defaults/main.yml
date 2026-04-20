@@ -6,6 +6,7 @@ failover_user: student
 failover_group: student
 failover_workspace: '/usr/local/.labs'
 failover_project:                                         # lab <failover_mode> <failover_project> 
+failover_validator_temp: "/tmp/{{ failover_project }}"
 failover_workdir_simulate: "{{ failover_workspace }}/{{  failover_project }}/simulate"
 failover_workdir_simulate_eval: "{{ failover_workspace }}/{{ failover_project }}/simulate-eval"
 failover_workdir_exam: "{{ failover_workspace }}/{{  failover_project }}/exam"
@@ -18,6 +19,7 @@ failover_remote_user: student
 failover_remote_group: student
 failover_remote_workspace: '/usr/local/.labs'
 failover_remote_project:                                   # lab <failover_mode> <failover_project> 
+failover_remote_validator_temp: "/tmp/{{ failover_remote_project }}"
 failover_remote_workdir_simulate: "{{ failover_remote_workspace }}/{{ failover_remote_project }}/simulate"
 failover_remote_workdir_exam: "{{ failover_remote_workspace }}/{{ failover_remote_project }}/exam"
 
