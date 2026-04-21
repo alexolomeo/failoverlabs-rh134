@@ -17,6 +17,7 @@ failover_sequence_file: "{{ failover_sequence }}/sequence.ini"
 failover_remote_environment: null                        # workstation, servera serverb
 failover_remote_user: student
 failover_remote_group: student
+failover_remote_rsyslog: /var/log/message-lab
 failover_remote_workspace: '/usr/local/.labs'
 failover_remote_project:                                   # lab <failover_mode> <failover_project> 
 failover_remote_validator_temp: "/tmp/{{ failover_remote_project }}"

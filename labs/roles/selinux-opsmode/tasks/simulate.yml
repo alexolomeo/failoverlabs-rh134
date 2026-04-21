@@ -5,12 +5,12 @@
 #    reboot_timeout: 600
 #    test_command:  "getenforce"
 
-- name: "SIMULATE LAB - Crear directory validator: {{ failover_remote_validator_temp }}"
-  become: yes
-  ansible.builtin.file:
-    path: "{{ failover_remote_validator_temp }}"
-    state: directory
-    mode: 0755
+#- name: "SIMULATE LAB - Crear directory validator: {{ failover_remote_validator_temp }}"
+#  become: yes
+#  ansible.builtin.file:
+#    path: "{{ failover_remote_validator_temp }}"
+#    state: directory
+#    mode: 0755
 
 - name: "SIMULATE LAB - Crear file validator: {{ failover_remote_validator_temp }}/simulate.log temporal"
   become: yes
@@ -124,18 +124,42 @@
   when: not (history_output.stdout | regex_search('^systemctl reboot', multiline=True))
 
 
-#- name: SIMULATE LAB - Obtener log de reboot desde "journalclt"
-#  ansible.builtin.command:
-#    cmd: journalctl --since '-15min' | grep "The system will reboot now"
-#  register: reboot_output
-#  changed_when: false
 
-#- name: SIMULATE LAB - Verificar Log si existe reboot en el "journalclt"
-#  ansible.builtin.command:
-#    cmd: echo "reboot:success:The system will reboot now" >> /tmp/selinux-opsmode/simulate.log
-#  when: "'The system will reboot now' in reboot_output.content | b64decode"
+- name: SIMULATE LAB - Extraer la hora de inicio del archivo de log
+  ansible.builtin.shell: |
+    grep "Inicia el laboratorio" {{ failover_remote_rsyslog }} | tail -n 1 | awk -F'=' '{print $2}' | tr -d '")'
+  register: raw_start_time
+  changed_when: false
 
-#- name: SIMULATE LAB - Verificar Log si no existe reboot en el "journalclt"
-#  ansible.builtin.command:
-#    cmd: echo "reboot:failed:The system will not reboot" >> /tmp/selinux-opsmode/simulate.log
-# when: "'The system will reboot now' not in reboot_output.content | b64decode"
+- name: SIMULATE LAB - Setear varriable de fecha para cargar al --since del journalctl
+  set_fact:
+    journal_start_time: "{{ raw_start_time.stdout }}"
+
+- name: "SIMULATE LAB - Debug logs de journal_start_time {{ raw_start_time.stdout }}"
+  ansible.builtin.debug:
+    var: journal_start_time
+
+- name: SIMULATE LAB - Obtener logs  del Journalctl desde el inicio del laboratorio
+  ansible.builtin.shell:
+    cmd: "journalctl -u systemd-logind --since '{{ journal_start_time }}' | grep 'The system will reboot now!'"
+  register: reboot_output
+  changed_when: false
+  failed_when: false # Evita que falle si el grep no encuentra nada
+
+- name: SIMULATE LAB - Debug logs desde el inicio del lab
+  ansible.builtin.debug:
+    var: reboot_output.stdout_lines
+
+- name: SIMULATE LAB - Verificar Log si existe reboot en el journalclt
+  ansible.builtin.shell:
+    cmd: "echo '7:journalctl:success:The system will reboot now' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: "'The system will reboot now!' in reboot_output.stdout"
+  changed_when: false
+  failed_when: false # Evita que falle si el grep no encuentra nada
+
+- name: SIMULATE LAB - Verificar Log si no existe reboot en el journalclt
+  ansible.builtin.shell:
+    cmd: "echo '7:journalctl:failed:The system will reboot now' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: "'The system will reboot now!'not in reboot_output.stdout"
+  changed_when: false
+  failed_when: false # Evita que falle si el grep no encuentra nada
