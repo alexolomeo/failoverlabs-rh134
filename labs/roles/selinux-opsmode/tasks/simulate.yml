@@ -5,17 +5,29 @@
 #    reboot_timeout: 600
 #    test_command:  "getenforce"
 
-- name: "Deshabilitar el servicio SSH temporalmente"
-  become: yes
-  ansible.builtin.systemd:
-    name: sshd
-    state: stopped
 
-- name: "Habilitar el servicio SSH después"
+- name: SIMULATE LAB - Cerrar todas las sesiones SSH activas en servera, excepto la de Ansible
   become: yes
-  ansible.builtin.systemd:
-    name: sshd
-    state: started
+  ansible.builtin.shell: |
+    # Obtener la lista de procesos sshd relacionados con root y student
+    sessions=$(ps -eo pid,cmd | grep 'sshd' | grep -v 'grep' | grep -vE '(root|student)@pts/\d+' | grep pts | awk '{print $1}')
+    # Contar cuántas líneas hay en la salida
+    num_sessions=$(echo "$sessions" | wc -l)
+    # Si hay solo un proceso, no hacer nada
+    if [ "$num_sessions" -eq 1 ]; then
+      echo "Solo hay una sesión SSH activa. No se mata ningún proceso."
+    else
+      # Si hay más de uno, matar todos menos el último
+      # Iterar sobre las líneas de salida excepto la última
+      for pid in $(echo "$sessions" | head -n -1); do
+        # Matar las sesiones SSH activas (de otros usuarios)
+        kill -9 $pid 2>/dev/null || true
+        logger -p local7.info -t "LAB-RH134" "simulate validate {{ failover_remote_project }}  process SSH kill : $pid  "
+      done
+    fi
+
+  ignore_errors: yes  # No interrumpir la ejecución si alguna sesión no se puede matar
+
 
 - name: SIMULATE LAB - Forzar la actualización del historial
   become: yes
