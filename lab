@@ -19,6 +19,19 @@ list_labs() {
     done
 }
 
+FLAG_PATH="/tmp/$LAB_NAME/active-simulate"
+
+# Función para simular
+simulate_lab() {
+    if [ -f "$FLAG_PATH" ]; then
+        echo "No puedes volver a evaluar, ejecuta nuevamente: lab start $LAB_NAME"
+        exit 1
+    fi
+
+    echo "Iniciando simulación..."
+    # Aquí iría el resto de tu lógica de simulación
+}
+
 # Validación básica
 if [[ -z "$ACTION" ]]; then
     echo "Uso: lab {start|simulate|grade|finish|list|info} <nombre-del-lab>"
@@ -46,7 +59,8 @@ case "$ACTION" in
         ;;
     simulate)
         log_action "simulate" "$LAB_NAME"
-        if [[ -x "$LAB_PATH/grade.sh" ]]; then
+	simulate_lab
+        if [[ -x "$LAB_PATH/simulate.sh" ]]; then
             echo "Simulador ...Evaluando laboratorio: $LAB_NAME"
             "$LAB_PATH/simulate.sh"
         else

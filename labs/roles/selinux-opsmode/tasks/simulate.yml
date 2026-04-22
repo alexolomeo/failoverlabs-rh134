@@ -5,12 +5,29 @@
 #    reboot_timeout: 600
 #    test_command:  "getenforce"
 
-#- name: "SIMULATE LAB - Crear directory validator: {{ failover_remote_validator_temp }}"
-#  become: yes
-#  ansible.builtin.file:
-#    path: "{{ failover_remote_validator_temp }}"
-#    state: directory
-#    mode: 0755
+- name: "Deshabilitar el servicio SSH temporalmente"
+  become: yes
+  ansible.builtin.systemd:
+    name: sshd
+    state: stopped
+
+- name: "Habilitar el servicio SSH después"
+  become: yes
+  ansible.builtin.systemd:
+    name: sshd
+    state: started
+
+- name: SIMULATE LAB - Forzar la actualización del historial
+  become: yes
+  ansible.builtin.shell:
+    cmd: "history -a && history -n"
+
+- name: SIMULATE LAB - Establecer flag en Workstation si el lab está activo
+  delegate_to: workstation
+  ansible.builtin.file:
+    path: "{{ failover_remote_validator_temp }}/active-simulate"
+    state: touch
+    mode: '0644'
 
 - name: "SIMULATE LAB - Crear file validator: {{ failover_remote_validator_temp }}/simulate.log temporal"
   become: yes

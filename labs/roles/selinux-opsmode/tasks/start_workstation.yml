@@ -4,8 +4,7 @@
 
   block:
 
-
-    - name: "START CONFIG LAB - Remove directory validator: /tmp/{{ failover_validator_temp }} temporal"
+    - name: "START CONFIG LAB - Remove directory validator: {{ failover_validator_temp }} temporal"
       become: yes
       ansible.builtin.file:
         path: "{{ failover_validator_temp }}"
@@ -13,7 +12,7 @@
         mode: 0775
         force: yes
           
-    - name: "START CONFIG LAB - Create directory validator: /tmp/{{ failover_validator_temp }} temporal"
+    - name: "START CONFIG LAB - Create directory validator: {{ failover_validator_temp }} temporal"
       become: yes
       ansible.builtin.file:
         path: "{{ failover_validator_temp }}"

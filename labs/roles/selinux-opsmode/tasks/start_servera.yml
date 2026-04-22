@@ -16,7 +16,7 @@
         history -w
       args:
         executable: /bin/bash
-        
+       
     - name: "START CONFIG LAB - Remove /var/log/message-lab "
       become: yes
       ansible.builtin.file:
