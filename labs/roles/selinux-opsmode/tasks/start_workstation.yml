@@ -4,13 +4,23 @@
 
   block:
 
+#    - name: "START CONFIG LAB - Asegurar que el servicio AT está instalado y activo"
+#      become: yes
+#      ansible.builtin.package:
+#        name: at
+#        state: present
+
+#    - name: "START CONFIG LAB - Asegurar que atd está corriendo"
+#      become: yes
+#      ansible.builtin.service:
+#        name: atd
+#        state: started
+#        enabled: yes
+    
     - name: "START CONFIG LAB - Remove directory validator: {{ failover_validator_temp }} temporal"
       become: yes
-      ansible.builtin.file:
-        path: "{{ failover_validator_temp }}"
-        state: absent
-        mode: 0775
-        force: yes
+      ansible.builtin.shell:
+        cmd: "rm -rf {{ failover_validator_temp }}"
           
     - name: "START CONFIG LAB - Create directory validator: {{ failover_validator_temp }} temporal"
       become: yes
@@ -18,7 +28,36 @@
         path: "{{ failover_validator_temp }}"
         state: directory
         mode: 0775
-        force: yes
+
+    - name: START CONFIG LAB - Obtener lista de IDs de tareas de AT
+      shell: "atq | awk '{print $1}'"
+      register: at_jobs
+      changed_when: false
+
+    - name: START CONFIG LAB -Eliminar cada tarea encontrada
+      shell: "atrm {{ item }}"
+      loop: "{{ at_jobs.stdout_lines }}"
+      when: at_jobs.stdout_lines | length > 0
+      register: result
+
+    - name: "START CONFIG LAB - Init lab files and hours init lab"
+      become: yes
+      ansible.builtin.shell:
+        cmd: |
+          HORA_ACTUAL=$(date +'%Y-%m-%d %H:%M:%S')
+          echo "Inicia el laboratorio {{ failover_project }} hora_inicio=$HORA_ACTUAL" >> {{ failover_validator_temp }}/init-lab
+
+#    - name: "Programar expiración del laboratorio con AT"
+#      become: yes
+#      ansible.builtin.at:
+#        command: |
+#          # 2. Guardar la hora de expiración en el log
+#          HORA_EXPIRACION=$(date +'%Y-%m-%d %H:%M:%S')
+#          echo "Laboratorio {{ failover_project }} expirado hora_fin=$HORA_EXPIRACION" >> {{ failover_validator_temp }}/finish-lab
+#          # 2. Finalizar el laboratorio
+#          lab finish "{{ failover_project }}"
+#      count: 15
+#      units: minutes          
 
     - name: "START CONFIG LAB - Ensure app sequences exists: {{ failover_sequence }}"
       become: yes
@@ -42,11 +81,11 @@
         msg: "Ansible version is  {{ ansible_version.full }}"
 
     - name: "START CONFIG LAB - Read file and put variable from {{ failover_sequence_file }} "
+      become: yes
       ansible.builtin.command: "cat {{ failover_sequence_file }}"
       ignore_errors: true
       changed_when: false
       register: failover_number_read
-      become: yes
 
     - name: "START CONFIG LAB - Set global variable failover_number"
       ansible.builtin.set_fact:

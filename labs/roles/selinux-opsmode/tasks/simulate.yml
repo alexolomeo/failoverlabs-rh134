@@ -192,3 +192,16 @@
   when: "'The system will reboot now!'not in reboot_output.stdout"
   changed_when: false
   failed_when: false # Evita que falle si el grep no encuentra nada
+
+- name: "SIMULATE LAB - Leer contenido del log en servera"
+  ansible.builtin.slurp:
+    src: "{{ failover_remote_validator_temp }}/simulate.log"
+  register: remote_log
+
+- name: "SIMULATE LAB - Crear el archivo en workstation con el contenido leído"
+  delegate_to: workstation
+  # become: yes  # Actívalo si necesitas permisos de root en workstation
+  ansible.builtin.copy:
+    content: "{{ remote_log['content'] | b64decode }}"
+    dest: "{{ failover_remote_validator_temp }}/simulate.log"
+    mode: '0644'

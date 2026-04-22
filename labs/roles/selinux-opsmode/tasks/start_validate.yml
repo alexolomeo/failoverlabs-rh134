@@ -6,6 +6,7 @@
     path: "{{ ansible_env.HOME }}/.bash_history"
     state: absent  
   when: ansible_env.SHELL == "/bin/bash"
+  ignore_errors: yes
 
 - name: START VALIDDATE LAB - Limpiar el historial de bash
   become: yes
