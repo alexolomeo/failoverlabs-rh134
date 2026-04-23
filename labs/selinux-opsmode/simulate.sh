@@ -13,5 +13,4 @@ ansible-playbook -i /usr/local/rh134/labs/server.lab  /usr/local/rh134/labs/seli
 sleep 2
 printf "%-5s Ensuring log files are not present on servera............success\n"
 
-cat /tmp/selinux-opsmode/simulate.log
 

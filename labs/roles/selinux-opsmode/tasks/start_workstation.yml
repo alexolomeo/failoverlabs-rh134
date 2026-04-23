@@ -47,17 +47,18 @@
           HORA_ACTUAL=$(date +'%Y-%m-%d %H:%M:%S')
           echo "Inicia el laboratorio {{ failover_project }} hora_inicio=$HORA_ACTUAL" >> {{ failover_validator_temp }}/init-lab
 
-#    - name: "Programar expiración del laboratorio con AT"
-#      become: yes
-#      ansible.builtin.at:
-#        command: |
-#          # 2. Guardar la hora de expiración en el log
-#          HORA_EXPIRACION=$(date +'%Y-%m-%d %H:%M:%S')
-#          echo "Laboratorio {{ failover_project }} expirado hora_fin=$HORA_EXPIRACION" >> {{ failover_validator_temp }}/finish-lab
-#          # 2. Finalizar el laboratorio
-#          lab finish "{{ failover_project }}"
-#      count: 15
-#      units: minutes          
+
+    - name: "START CONFIG LAB - Programar expiración del laboratorio con AT"
+      become: yes
+      ansible.posix.at:
+        command: |
+          # Usar rutas absolutas es más seguro en trabajos de AT
+          HORA_EXPIRACION=$(date +'%Y-%m-%d %H:%M:%S')
+          echo "Laboratorio {{ failover_project }} expirado hora_fin=$HORA_EXPIRACION" >> {{ failover_validator_temp }}/finish-lab
+          lab finish "{{ failover_project }}"
+        count: 10
+        units: minutes
+        state: present
 
     - name: "START CONFIG LAB - Ensure app sequences exists: {{ failover_sequence }}"
       become: yes

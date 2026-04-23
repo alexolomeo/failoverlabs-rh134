@@ -3,10 +3,10 @@
 - name: "START VALIDDATE LAB - Eliminar archivo de history del bash  {{ ansible_env.HOME }}/.bash_history, using shell: {{ ansible_env.SHELL }} "
   become: yes
   ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/.bash_history"
+    path: "root/.bash_history"
     state: absent  
-  when: ansible_env.SHELL == "/bin/bash"
   ignore_errors: yes
+  #when: ansible_env.SHELL == "/bin/bash"
 
 - name: START VALIDDATE LAB - Limpiar el historial de bash
   become: yes
@@ -18,14 +18,6 @@
     src: /etc/selinux/config
   register: config_file
   changed_when: false
-
-#- name: START VALIDDATE LAB - Comprobar que el archivo /etc/selinux/config es diferente de SELINUX=enforcing
-#  ansible.builtin.assert:
-#    that:
-#      - "'SELINUX=enforcing' in config_file.content | b64decode"
-#    fail_msg: "El archivo /etc/selinux/config no tiene SELINUX=enforcing."
-#    success_msg: "El archivo /etc/selinux/config ya está configurado correctamente como SELINUX=enforcing."
-#  when: "'SELINUX=enforcing' not in config_file.content | b64decode"
 
 - name: START VALIDDATE LAB - Establecer SELINUX=enforcing en /etc/selinux/config
   ansible.builtin.lineinfile:

@@ -48,15 +48,13 @@ check_expire_lab() {
 	DIFERENCIA_SEC=$(( AHORA_SEC - INICIO_SEC ))
 	DIFERENCIA_MIN=$(( DIFERENCIA_SEC / 60 ))
 
-	echo "Hora inicio: $FECHA_STR"
-	echo "Minutos transcurridos: $DIFERENCIA_MIN min"
-
-	# 4. Validar si supera los 15 minutos
-	if [ "$DIFERENCIA_MIN" -gt 15 ]; then
-	    echo "------------------------------------------------------------"
-	    echo "ALERTA: Han pasado más de 15 minutos ($DIFERENCIA_MIN min)."
-	    echo "Ejecutar nuevamente: lab start selinux-opsmode"
-	    echo "------------------------------------------------------------"
+	# 4. Validar si supera los 10 minutos
+	if [ "$DIFERENCIA_MIN" -gt 10 ]; then
+	    echo "	--------------------------------------------------------------"
+	    echo "		ALERTA: Han pasado más de 10 minutos ($DIFERENCIA_MIN min)."
+	    echo "		Ejecutar nuevamente: lab start selinux-opsmode             "	
+	    echo "	--------------------------------------------------------------"
+	    exit 1
 	else
 	    echo "Validación correcta: Dentro del tiempo permitido. Continuando..."
 	fi
