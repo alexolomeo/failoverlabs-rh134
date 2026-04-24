@@ -1,0 +1,25 @@
+---
+
+- name: "Workstation"
+  block:
+    - include_tasks: init_workstation.yml
+      when: failover_environment == "workstation"
+  when: 
+    - failover_mode == "configurate"  
+    - failover_environment == "workstation"  
+
+- name: "Servera"
+  block:
+    - include_tasks: init_servera.yml
+      when: failover_remote_environment == "servera"
+  when: 
+    - failover_mode == "configurate"  
+    - failover_remote_environment == "servera"  
+
+- name: "Serverb"
+  block:
+    - include_tasks: init_serverb.yml
+      when: failover_remote_environment == "serverb"
+  when: 
+    - failover_mode == "configurate"  
+    - failover_remote_environment == "serverb"

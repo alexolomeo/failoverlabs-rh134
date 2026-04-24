@@ -1,0 +1,75 @@
+---
+
+- name: "Starting Configuration Remote Server."
+  block:
+
+    - name: "INIT CONFIG LAB - Borrar historial de root permanentemente"
+      become: yes
+      ansible.builtin.shell: |
+        truncate -s 0 ~/.bash_history
+        history -c
+        history -w
+      args:
+        executable: /bin/bash
+       
+    - name: "INIT CONFIG LAB - Remove /var/log/message-lab "
+      become: yes
+      ansible.builtin.file:
+        path: "/var/log/message-lab"
+        state: absent
+        force: yes
+
+    - name: "INIT CONFIG LAB - Reiniciar Rsyslog para cargar la nueva regla"
+      ansible.builtin.systemd:
+        name: rsyslog
+        state: restarted
+
+    - name: "INIT CONFIG LAB - Syslog inicia el Logger"
+      become: yes
+      ansible.builtin.shell:
+        # Generamos la marca de tiempo y la enviamos a local7.info
+        cmd: |
+          HORA_ACTUAL=$(date +'%Y-%m-%d %H:%M:%S')
+          logger -p local7.info -t "LAB-RH134" "Inicia el laboratorio {{ failover_remote_project }} hora_inicio=$HORA_ACTUAL"
+
+    - name: "INIT CONFIG LAB - Remove directory validator: {{ failover_remote_validator_temp }} temporal"
+      become: yes
+      ansible.builtin.file:
+        path: "{{ failover_remote_validator_temp }}"
+        state: absent
+        mode: 0775
+        force: yes
+
+    - name: "INIT CONFIG LAB - Create directory validator: {{ failover_remote_validator_temp }} temporal"
+      become: yes
+      ansible.builtin.file:
+        path: "{{ failover_remote_validator_temp }}"
+        state: directory
+        mode: 0775
+        force: yes
+
+    - name: "INIT CONFIG LAB - Ensure app workdir exists: {{ failover_remote_workdir_simulate }}/{{ failover_number }}"
+      become: yes
+      ansible.builtin.file:
+        path: "{{ failover_remote_workdir_simulate }}/{{ failover_number }}"
+        state: directory
+        mode: 0775
+        force: yes
+
+    - name: "INIT CONFIG LAB - Ensure app workdir exists: {{ failover_remote_workdir_exam }}/{{ failover_number }}"
+      become: yes
+      ansible.builtin.file:
+        path: "{{ failover_remote_workdir_exam }}/{{ failover_number }}"
+        state: directory
+        mode: 0775
+        force: yes
+
+    - name: "INIT CONFIG LAB - Syslog prepared start environment = {{ failover_remote_environment }} "
+      become: yes
+      ansible.builtin.shell:
+        # Generamos la marca de tiempo y la enviamos a local7.info
+        cmd: |
+          logger -p local7.info -t "LAB-RH134" "Preparacion entorno listo para el review..."
+
+  when: failover_remote_environment == "servera"
+

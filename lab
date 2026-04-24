@@ -116,6 +116,16 @@ case "$ACTION" in
             echo "No hay script de limpieza (cleanup.sh)"
         fi
         ;;
+    configurate)
+        log_action "configurate" "$LAB_NAME"
+	check_config_lab
+        if [[ -x "$LAB_PATH/configurate.sh" ]]; then
+            echo "Configurando .. laboratorio: $LAB_NAME"
+            "$LAB_PATH/configurate.sh"
+        else
+            echo "No hay script de oonfiguracion (configurrate.sh)"
+        fi
+        ;;
     list)
         log_action "list" "N/A"
         list_labs

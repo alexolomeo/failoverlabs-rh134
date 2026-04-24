@@ -1,0 +1,42 @@
+---
+
+- name: init
+  hosts: workstation
+  gather_facts: no
+  become: true
+  vars: 
+    failover_mode: "configurate"
+  roles:
+    - role: init
+      failover_project: init               # lab <failover_mode> <failover_project>
+      failover_environment: "workstation"               # workstation, servera serverb 
+      failover_user: root 
+      failover_group: root
+
+
+- name: init
+  hosts: servera
+  gather_facts: no
+  become: true
+  vars: 
+    failover_mode: "configurate"
+  roles:
+    - role: init
+      failover_remote_project: init
+      failover_remote_environment: "servera"              # workstation, servera serverb 
+      failover_remote_user: root
+      failover_remote_group: root
+
+
+- name: init
+  hosts: serverb
+  gather_facts: no
+  become: true
+  vars: 
+    failover_mode: "configurate"
+  roles:
+    - role: init
+      failover_remote_project: init
+      failover_remote_environment: "serverb"              # workstation, servera serverb 
+      failover_remote_user: root
+      failover_remote_group: root

@@ -1,0 +1,82 @@
+---
+
+- name: "Starting Configuration Workstatiion"
+
+  block:
+
+    - name: "INIT CONFIG LAB - Asegurar que el servicio AT está instalado y activo"
+      become: yes
+      ansible.builtin.package:
+        name: at
+        state: present
+
+    - name: "INIT CONFIG LAB - Asegurar que atd está corriendo"
+      become: yes
+      ansible.builtin.service:
+        name: atd
+        state: started
+        enabled: yes
+    
+    - name: "INIT CONFIG LAB - Create directory validator: {{ failover_config }}"
+      become: yes
+      ansible.builtin.file:
+        path: "{{ failover_config }}"
+        state: directory
+        mode: 0775
+
+    - name: "INIT CONFIG LAB - Init lab files and hours init lab"
+      become: yes
+      ansible.builtin.shell:
+        cmd: |
+          echo "expiration_simulate=10" >> {{ failover_config }}/config
+          echo "expiration_grade=10" >> {{ failover_config }}/config
+
+    - name: Crear archivo de configuración lab.conf
+      copy:
+        dest: /etc/rsyslog.d/lab.conf
+        content: |
+          local7.* /var/log/message-lab
+          & stop
+        owner: root
+        group: root
+        mode: '0644'
+          
+    - name: Reiniciar rsyslog
+      service:
+        name: rsyslog
+        state: restarted
+
+    - name: "INIT CONFIG LAB - Ensure app workdir exists: {{ failover_workdir_simulate }}"
+      become: yes
+      ansible.builtin.file:
+        path: "{{ failover_workdir_simulate }}"
+        state: directory
+        mode: 0775
+        force: yes
+
+    - name: "INIT CONFIG LAB - Ensure app workdir exists: {{ failover_workdir_simulate_eval }}"
+      become: yes
+      ansible.builtin.file:
+        path: "{{ failover_workdir_simulate_eval }}"
+        state: directory
+        mode: 0775
+        force: yes
+
+    - name: "INIT CONFIG LAB - Ensure app workdir exists: {{ failover_workdir_exam }}"
+      become: yes
+      ansible.builtin.file:
+        path: "{{ failover_workdir_exam }}"
+        state: directory
+        mode: 0775
+        force: yes
+
+    - name: "INIT CONFIG LAB - Ensure app workdir exists: {{ failover_workdir_exam_eval }}"
+      become: yes
+      ansible.builtin.file:
+        path: "{{ failover_workdir_exam_eval }}"
+        state: directory
+        mode: 0775
+        force: yes
+
+  when: failover_environment == "workstation"
+
