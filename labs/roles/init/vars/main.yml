@@ -1,0 +1,19 @@
+---
+
+lab_tools:
+    - unzip
+    - net-tools
+    - wget
+    - zip
+    - at
+
+lab_remote_tools:
+    - unzip
+    - net-tools
+    - wget
+    - zip
+    - at
+    - kmod-kvdo
+    - vdo
+    - stratisd
+    - stratisd-cli

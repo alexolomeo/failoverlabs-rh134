@@ -24,7 +24,6 @@
         name: rsyslog
         state: restarted
 
-
     - name: "INIT CONFIG LAB - Remove directory validator: {{ failover_remote_validator_temp }} temporal"
       become: yes
       ansible.builtin.file:
@@ -63,5 +62,5 @@
         cmd: |
           logger -p local7.info -t "LAB-RH134" "Configuracion Inicial de {{ failover_remote_environment }} ..."
 
-  when: failover_remote_environment == "servera"
+  when: failover_remote_environment == "serverb"
 

@@ -4,11 +4,11 @@
 
   block:
 
-    - name: "INIT CONFIG LAB - Asegurar que el servicio AT está instalado y activo"
-      become: yes
-      ansible.builtin.package:
-        name: at
+    - name: IINIT CONFIG LAB - nstalando paquetes requeridos para el lab
+      dnf:
+        name: "{{ lab_tools }}"
         state: present
+      when: lab_tools is defined
 
     - name: "INIT CONFIG LAB - Asegurar que atd está corriendo"
       become: yes
@@ -17,7 +17,7 @@
         state: started
         enabled: yes
     
-    - name: "INIT CONFIG LAB - Create directory validator: {{ failover_config }}"
+    - name: "INIT CONFIG LAB - Create directory config: {{ failover_config }}"
       become: yes
       ansible.builtin.file:
         path: "{{ failover_config }}"
@@ -27,7 +27,6 @@
     - name: "INIT CONFIG LAB - Init lab files and hours init lab"
       become: yes
       ansible.builtin.shell:
-        cmd: |
           echo "expiration_simulate=10" >> {{ failover_config }}/config
           echo "expiration_grade=10" >> {{ failover_config }}/config
 
@@ -78,5 +77,11 @@
         mode: 0775
         force: yes
 
+    - name: "INIT CONFIG LAB - Syslog prepared start environment = {{ failover_remote_environment }} "
+      become: yes
+      ansible.builtin.shell:
+        cmd: |
+          logger -p local7.info -t "LAB-RH134" "Configuracion Inicial de {{ failover_environment }} ..."
+          
   when: failover_environment == "workstation"
 
