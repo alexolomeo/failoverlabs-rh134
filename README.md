@@ -27,7 +27,7 @@ lab configure init
 
 ###  Playbook setup instalation and configuration
 
-## Init playbook suppoted
+## Init configurrate playbook lab
 This prepare installation and configuration to playbook launch.
 
 ```yml
