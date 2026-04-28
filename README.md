@@ -25,6 +25,59 @@ To init and configure lab, you need apply  `la configure initl`.
 lab configure init
 ```
 
+###  Playbook setup instalation and configuration
+
+## Init playbook suppoted
+This prepare installation and configuration to playbook launch.
+
+```yml
+---
+
+- name: Init
+  hosts: workstation
+  gather_facts: no
+  become: true
+  vars: 
+    failover_mode: "configure"
+  roles:
+    - role: init
+      failover_project: init                            #  lab configure init 
+      failover_environment: "workstation"               # workstation, servera serverb 
+      failover_user: root 
+      failover_group: root
+
+
+- name: Init
+  hosts: servera
+  gather_facts: no
+  become: true
+  vars: 
+    failover_mode: "configure"
+  roles:
+    - role: init
+      failover_remote_project: init
+      failover_remote_environment: "servera"              # workstation, servera serverb 
+      failover_remote_user: root
+      failover_remote_group: root
+
+
+- name: Init
+  hosts: serverb
+  gather_facts: no
+  become: true
+  vars: 
+    failover_mode: "configure"
+  roles:
+    - role: init
+      failover_remote_project: init
+      failover_remote_environment: "serverb"              # workstation, servera serverb 
+      failover_remote_user: root
+      failover_remote_group: root
+```
+
+
+
+
 ##  Process action supported for simulate test
 
 #start topic lab
