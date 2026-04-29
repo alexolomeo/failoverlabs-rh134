@@ -15,5 +15,5 @@ lab_remote_tools:
     - at
     - kmod-kvdo
     - vdo
-    - stratisd
-    - stratisd-cli
+#    - stratisd
+#    - stratis-cli

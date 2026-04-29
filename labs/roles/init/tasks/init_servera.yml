@@ -3,7 +3,7 @@
 - name: "Starting Configuration Remote Server."
   block:
 
-    - name: IINIT CONFIG LAB - nstalando paquetes requeridos para el lab
+    - name: IINIT CONFIG LAB - instalando paquetes requeridos para el lab
       dnf:
         name: "{{ lab_remote_tools }}"
         state: present

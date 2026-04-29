@@ -118,10 +118,10 @@ case "$ACTION" in
         ;;
     configurate)
         log_action "configurate" "$LAB_NAME"
-	check_config_lab
+	#check_config_lab
         if [[ -x "$LAB_PATH/configurate.sh" ]]; then
             echo "Configurando .. laboratorio: $LAB_NAME"
-            "$LAB_PATH/configurate.sh"
+	    "$LAB_PATH/configurate.sh" $LAB_NAME
         else
             echo "No hay script de oonfiguracion (configurrate.sh)"
         fi
