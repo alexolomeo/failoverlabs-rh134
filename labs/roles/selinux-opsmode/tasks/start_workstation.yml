@@ -35,6 +35,19 @@
           HORA_ACTUAL=$(date +'%Y-%m-%d %H:%M:%S')
           echo "Inicia el laboratorio {{ failover_project }} hora_inicio=$HORA_ACTUAL" >> {{ failover_validator_temp }}/init-lab
 
+    - name: "START CONFIG LAB - Extraer el tiempo de expiracion del archivo {{ failover_config }}/config"
+      ansible.builtin.shell: |
+        grep 'expiration_simulate=' "{{ failover_config }}/config" | cut -d'=' -f2
+      register: raw_expiration_time
+      changed_when: false
+
+    - name: START CONFIG LAB - Setear variable lab_expiration_time 
+      set_fact:
+        lab_expiration_time: "{{ raw_expiration_time.stdout }}"
+
+    - name: "START CONFIG LAB - Debug logs de lab_expiration_time {{ raw_expiration_time.stdout }}"
+      ansible.builtin.debug:
+        var: lab_expiration_time
 
     - name: "START CONFIG LAB - Programar expiración del laboratorio con AT"
       become: yes
@@ -44,7 +57,7 @@
           HORA_EXPIRACION=$(date +'%Y-%m-%d %H:%M:%S')
           echo "Laboratorio {{ failover_project }} expirado hora_fin=$HORA_EXPIRACION" >> {{ failover_validator_temp }}/finish-lab
           lab finish "{{ failover_project }}"
-        count: 10
+        count: "{{ lab_expiration_time | int }}"
         units: minutes
         state: present
 

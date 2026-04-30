@@ -1,5 +1,5 @@
 #!/bin/bash
-printf "%-5s Configurando entorno del lab logs-syslog...\n"
+printf "%-5s Configurando entorno y procesando las validaciones...\n"
 sleep 2
 printf "%-5s Checking Log system......................................success\n"
 

@@ -4,6 +4,8 @@ failover_mode: "{{ failover_mode  || default('start') }}"
 failover_environment: null                         # workstation, servera serverb
 failover_user: student
 failover_group: student
+failover_config: /etc/lab-rh134
+failover_config_home: ~/lab-rh134
 failover_workspace: '/usr/local/.labs'
 failover_project:                                         # lab <failover_mode> <failover_project> 
 failover_validator_temp: "/tmp/{{ failover_project }}"
