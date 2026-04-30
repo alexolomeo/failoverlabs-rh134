@@ -4,18 +4,6 @@
 
   block:
 
-#    - name: "START CONFIG LAB - Asegurar que el servicio AT está instalado y activo"
-#      become: yes
-#      ansible.builtin.package:
-#        name: at
-#        state: present
-
-#    - name: "START CONFIG LAB - Asegurar que atd está corriendo"
-#      become: yes
-#      ansible.builtin.service:
-#        name: atd
-#        state: started
-#        enabled: yes
     
     - name: "START CONFIG LAB - Remove directory validator: {{ failover_validator_temp }} temporal"
       become: yes

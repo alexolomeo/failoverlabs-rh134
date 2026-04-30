@@ -29,13 +29,20 @@ check_play_lab() {
     fi
 
     echo "Iniciando simulación..."
-    # Aquí iría el resto de tu lógica de simulación
 }
 
-# Función para ver a la espiracion
+# Función para validar el tiempo de expiracion
 check_expire_lab() {
 
     FILE_PATH="/tmp/$LAB_NAME/init-lab"
+    CONFIG_FILE="/etc/lab-rh134/config"
+    
+    # 1. Intentar leer el valor del config, si no existe o falla, usar 10 como backup
+    if [ -f "$CONFIG_FILE" ]; then
+        EXPIRATION_LIMIT=$(grep 'expiration_simulate=' "$CONFIG_FILE" | cut -d'=' -f2)
+    fi
+
+    EXPIRATION_LIMIT=${EXPIRATION_LIMIT:5}
 
     if [ -f "$FILE_PATH" ]; then
 	FECHA_STR=$(grep 'hora_inicio=' $FILE_PATH | tail -n 1 | cut -d'=' -f2)
@@ -49,9 +56,9 @@ check_expire_lab() {
 	DIFERENCIA_MIN=$(( DIFERENCIA_SEC / 60 ))
 
 	# 4. Validar si supera los 10 minutos
-	if [ "$DIFERENCIA_MIN" -gt 10 ]; then
+	if [ "$DIFERENCIA_MIN" -gt "$EXPIRATION_LIMIT" ]; then
 	    echo "	--------------------------------------------------------------"
-	    echo "		ALERTA: Han pasado más de 10 minutos ($DIFERENCIA_MIN min)."
+	    echo "		ALERTA: Han pasado más de $EXPIRATION_LIMIT minutos ($DIFERENCIA_MIN min)."
 	    echo "		Ejecutar nuevamente: lab start selinux-opsmode             "	
 	    echo "	--------------------------------------------------------------"
 	    exit 1
