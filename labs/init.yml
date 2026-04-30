@@ -5,7 +5,7 @@
   gather_facts: no
   become: true
   vars: 
-    failover_mode: "configurate"
+    failover_mode: "configure"
   roles:
     - role: init
       failover_project: init               # lab <failover_mode> <failover_project>
@@ -19,7 +19,7 @@
   gather_facts: no
   become: true
   vars: 
-    failover_mode: "configurate"
+    failover_mode: "configure"
   roles:
     - role: init
       failover_remote_project: init
@@ -33,7 +33,7 @@
   gather_facts: no
   become: true
   vars: 
-    failover_mode: "configurate"
+    failover_mode: "configure"
   roles:
     - role: init
       failover_remote_project: init

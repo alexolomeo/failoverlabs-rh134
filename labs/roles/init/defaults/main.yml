@@ -1,6 +1,6 @@
 ---
 
-failover_mode: "{{ failover_mode  || default('start') }}" 
+failover_mode: "{{ failover_mode  || default('configure') }}" 
 failover_environment: null                         # workstation, servera serverb
 failover_user: student
 failover_group: student

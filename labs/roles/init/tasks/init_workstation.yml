@@ -24,11 +24,23 @@
         state: directory
         mode: 0775
 
-    - name: "INIT CONFIG LAB - Init lab files and hours init lab"
+    - name: "INIT CONFIG LAB - Validar si el archivo de configuración existe"
+      ansible.builtin.stat:
+        path: "{{ failover_config }}/config"
+      register: config_file
+
+    - name: "INIT CONFIG LAB - Escribir configuración"
       become: yes
-      ansible.builtin.shell:
-          echo "expiration_simulate=10" >> {{ failover_config }}/config
-          echo "expiration_grade=10" >> {{ failover_config }}/config
+      ansible.builtin.copy:
+        dest: "{{ failover_config }}/config"
+        content: |
+          # Lab setup to expirate proccess to evaluate
+          # This value is in minutes
+          expiration_simulate=10
+
+          expiration_grade=10
+      when: not config_file.stat.exists
+      ignore_errors: yes
 
     - name: Crear archivo de configuración lab.conf
       copy:
