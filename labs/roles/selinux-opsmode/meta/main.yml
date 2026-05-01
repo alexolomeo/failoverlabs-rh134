@@ -1,8 +1,8 @@
 galaxy_info:
   role_name: selinux-opsmode
-  namespace: middleware_automation
+  namespace: lab_automation
   author: Alexander Aguilar Torrico
-  description: configuration.
+  description: Selinuz Verification
   company: Failover BO.
 
   license: Apache License 2.0
