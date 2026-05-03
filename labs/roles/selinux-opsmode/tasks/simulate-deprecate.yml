@@ -53,19 +53,19 @@
     src: /etc/selinux/config
   register: config_file
 
-- name: SIMULATE LAB - Log de éxito (SELINUX=enforcing encontrado) en /etc/selinux/config
+- name: SIMULATE LAB - Log de éxito (SELINUX=enforcing encontrado)
   become: yes
-  ansible.builtin.lineinfile:
-    path: "{{ failover_remote_validator_temp }}/simulate.log"
-    create: yes
-    line: >-
-      {% set content = config_file.content | b64decode %}
-      {% if content | regex_search(item.regex) %}
-      1:selinux:success:{{ item.label }}
-      {% else %}
-      1:selinux:failed:{{ item.label }}
-      {% endif %}
-  loop: "{{ validator_conf_file }}"
+  ansible.builtin.shell: 
+    cmd: "echo '1:selinux:success:Enforcing' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: config_file.content | b64decode | regex_search('SELINUX=enforcing')
+  changed_when: true
+
+- name: SIMULATE LAB - Log de error (SELINUX=enforcing NO encontrado)
+  become: yes
+  ansible.builtin.shell: 
+    cmd: "echo '1:selinux:failed:Enforcing' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: not (config_file.content | b64decode | regex_search('SELINUX=enforcing'))
+  changed_when: true
 
 
 - name: SIMULATE LAB - Verificar que getenforce devuelva "Enforcing"
@@ -75,12 +75,18 @@
   register: getenforce_output
   changed_when: false
 
-- name: SIMULATE LAB - Registrar resultado la salida de getenforce  en simulate.log
+- name: SIMULATE LAB - Validar que la salida de getenforce sea "Enforcing"
   become: yes
   ansible.builtin.shell:
-    cmd: |
-      {% set status = 'success' if getenforce_output.stdout == 'Enforcing' else 'failed' %}
-      echo "2:getenforce:{{ status }}:Enforcing" >> {{ failover_remote_validator_temp }}/simulate.log
+    cmd: "echo '2:getenforce:success:Enforcing' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: getenforce_output.stdout == "Enforcing" 
+
+- name: SIMULATE LAB - Validar que la salida de getenforce sea distinto "Enforcing"
+  become: yes
+  ansible.builtin.shell:
+    cmd: "echo '2:getenforce:failed:Enforcing' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: getenforce_output.stdout != "Enforcing" 
+
 
 - name: SIMULATE LAB - Obtener historial de comandos
   ansible.builtin.shell: |
@@ -95,13 +101,57 @@
     dest: "{{ failover_remote_validator_temp }}/history.log"
     mode: '0644'
 
-- name: SIMULATE LAB - Validar comandos en el historial
-  ansible.builtin.lineinfile:
-    path: "{{ failover_remote_validator_temp }}/simulate.log"
-    create: yes
-    line: >-
-      {{ item.id }}:history:{{ 'success' if (history_output.stdout | regex_search(item.regex, multiline=True)) else 'failed' }}:{{ item.label }}
-  loop: "{{ validator_history }}"
+- name: SIMULATE LAB - Validar si getenforce aparece correctamente en el historial
+  become: yes
+  ansible.builtin.shell:
+    cmd: "echo '3:history:success:getenforce' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: history_output.stdout | regex_search('^getenforce', multiline=True)
+
+- name: SIMULATE LAB - Validar si getenforce no aparece correctamente en el historial
+  become: yes
+  ansible.builtin.shell:
+    cmd: "echo '3:history:failed:getenforce' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: not(history_output.stdout | regex_search('^getenforce', multiline=True))
+
+
+- name: SIMULATE LAB - Validar si setenforce 1 aparece correctamente en el historial
+  become: yes
+  ansible.builtin.shell:
+    cmd: "echo '4:history:success:setenforce 1' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: history_output.stdout | regex_search('^setenforce 1', multiline=True)
+
+- name: SIMULATE LAB - Validar si setenforce 1 no aparece correctamente en el historial
+  become: yes
+  ansible.builtin.shell:
+    cmd: "echo '4:history:failed:setenforce 1' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: not(history_output.stdout | regex_search('^setenforce 1', multiline=True))
+
+
+- name: SIMULATE LAB - Validar si setenforce 0 aparece correctamente en el historial
+  become: yes
+  ansible.builtin.shell:
+    cmd: "echo '5:history:success:setenforce 0' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: history_output.stdout | regex_search('^setenforce 0', multiline=True)
+
+- name: SIMULATE LAB - Validar si setenforce 0 no aparece correctamente en el historial
+  become: yes
+  ansible.builtin.shell:
+    cmd: "echo '5:history:failed:setenforce 0' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: not (history_output.stdout | regex_search('^setenforce 0', multiline=True))
+
+
+- name: SIMULATE LAB - Validar si systecmctl reboot aparece correctamente en el historial
+  become: yes
+  ansible.builtin.shell:
+    cmd: "echo '6:history:success:systemctl reboot' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: history_output.stdout | regex_search('^systemctl reboot', multiline=True)
+
+- name: SIMULATE LAB - Validar si systecmctl reboot no aparece correctamente en el historial
+  become: yes
+  ansible.builtin.shell:
+    cmd: "echo '6:history:failed:systecmctl reboot' >> {{ failover_remote_validator_temp }}/simulate.log"
+  when: not (history_output.stdout | regex_search('^systemctl reboot', multiline=True))
+
 
 
 - name: SIMULATE LAB - Extraer la hora de inicio del archivo de log
