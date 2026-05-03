@@ -34,6 +34,8 @@
         - { id: 4, label: "setenforce 1", regex: "^setenforce 1" }
         - { id: 5, label: "setenforce 0", regex: "^setenforce 0" }
         - { id: 6, label: "systemctl reboot", regex: "^systemctl reboot" }
+      validator_journal:
+        - { id: "7", label: "The system will reboot now!" }
 
 
         

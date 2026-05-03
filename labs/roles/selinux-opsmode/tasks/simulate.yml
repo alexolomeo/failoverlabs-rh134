@@ -48,25 +48,31 @@
     state: touch
     mode: 0644
 
-- name: SIMULATE LAB - Leer el archivo /etc/selinux/config para verificar SELINUX=enforcing
+- name: "SIMULATE LAB - Leer configuración de SELinux"
   ansible.builtin.slurp:
     src: /etc/selinux/config
-  register: config_file
+  register: selinux_raw
 
-- name: SIMULATE LAB - Log de éxito (SELINUX=enforcing encontrado) en /etc/selinux/config
+- name: "SIMULATE LAB - Procesar resultados de validación"
+  set_fact:
+    selinux_results: >-
+      {%- set content = selinux_raw.content | b64decode -%}
+      {%- if content | regex_search(item.regex) -%}
+      1:selinux:success:{{ item.label }}
+      {%- else -%}
+      1:selinux:failed:{{ item.label }}
+      {%- endif -%}
+  loop: "{{ validator_conf_file }}"
+  register: processed_lines
+
+- name: "SIMULATE LAB - Registrar resultados en log"
   become: yes
   ansible.builtin.lineinfile:
     path: "{{ failover_remote_validator_temp }}/simulate.log"
     create: yes
-    line: >-
-      {% set content = config_file.content | b64decode %}
-      {% if content | regex_search(item.regex) %}
-      1:selinux:success:{{ item.label }}
-      {% else %}
-      1:selinux:failed:{{ item.label }}
-      {% endif %}
-  loop: "{{ validator_conf_file }}"
-
+    line: "{{ item.ansible_facts.selinux_results }}"
+    mode: '0644'
+  loop: "{{ processed_lines.results }}"
 
 - name: SIMULATE LAB - Verificar que getenforce devuelva "Enforcing"
   become: yes
@@ -118,30 +124,24 @@
   ansible.builtin.debug:
     var: journal_start_time
 
-- name: SIMULATE LAB - Obtener logs  del Journalctl desde el inicio del laboratorio
-  ansible.builtin.shell:
-    cmd: "journalctl -u systemd-logind --since '{{ journal_start_time }}' | grep 'The system will reboot now!'"
-  register: reboot_output
+- name: SIMULATE LAB - Register Log del journalclt en la variables journal_output
+  ansible.builtin.command:
+    cmd: "journalctl -u systemd-logind --since '{{ journal_start_time }}'"
+  register: journal_output
   changed_when: false
-  failed_when: false # Evita que falle si el grep no encuentra nada
+  failed_when: false
 
 - name: SIMULATE LAB - Debug logs desde el inicio del lab
   ansible.builtin.debug:
     var: reboot_output.stdout_lines
 
-- name: SIMULATE LAB - Verificar Log si existe reboot en el journalclt
-  ansible.builtin.shell:
-    cmd: "echo '7:journalctl:success:The system will reboot now' >> {{ failover_remote_validator_temp }}/simulate.log"
-  when: "'The system will reboot now!' in reboot_output.stdout"
+- name: SIMULATE LAB - Verificar Log si existe el patron en el journalclt
+  ansible.builtin.lineinfile:
+    path: "{{ failover_remote_validator_temp }}/simulate.log"
+    line: "{{ item.id }}:journalctl:{{ 'success' if item.label in journal_output.stdout else 'failed' }}:{{ item.label }}"
+    create: yes
+  loop: "{{ validator_journal }}"
   changed_when: false
-  failed_when: false # Evita que falle si el grep no encuentra nada
-
-- name: SIMULATE LAB - Verificar Log si no existe reboot en el journalclt
-  ansible.builtin.shell:
-    cmd: "echo '7:journalctl:failed:The system will reboot now' >> {{ failover_remote_validator_temp }}/simulate.log"
-  when: "'The system will reboot now!'not in reboot_output.stdout"
-  changed_when: false
-  failed_when: false # Evita que falle si el grep no encuentra nada
 
 - name: "SIMULATE LAB - Leer contenido del log en servera"
   ansible.builtin.slurp:
