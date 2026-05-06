@@ -105,6 +105,15 @@ case "$ACTION" in
             echo "No hay script de evaluación (simulate.sh)"
         fi
         ;;
+    report)
+        if [[ -x "$LAB_PATH/report.sh" ]]; then
+            echo "Report Generator...Evaluando laboratorio: $LAB_NAME"
+            "$LAB_PATH/report.sh"
+	    cat /tmp/$LAB_NAME/simulate.log
+        else
+            echo "No hay script de evaluación (simulate.sh)"
+        fi
+        ;;
     grade)
         log_action "grade" "$LAB_NAME"
         if [[ -x "$LAB_PATH/grade.sh" ]]; then

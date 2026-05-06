@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Corregido: Variable failover_project -->
+    <title>Reporte de Evaluación RH134 - {{ failover_project | default('N/A') }}</title>
+    <style>
+        /* ... Tu CSS se mantiene igual, es muy bueno ... */
+        @page { size: A4; margin: 15mm; }
+        body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f8fafc; color: #1e293b; margin: 0; padding: 20px; line-height: 1.5; }
+        .report-container { max-width: 900px; margin: auto; background: #ffffff; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-top: 8px solid #2563eb; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 30px; }
+        .header h1 { margin: 0; color: #1e3a8a; font-size: 22pt; }
+        .meta-info { font-size: 10pt; color: #64748b; text-align: right; }
+        table { width: 100%; border-collapse: collapse; margin: 25px 0; }
+        th { background-color: #f1f5f9; color: #475569; font-weight: 600; text-transform: uppercase; font-size: 9pt; padding: 12px 15px; text-align: left; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; font-size: 10pt; }
+        .status-pill { padding: 4px 10px; border-radius: 9999px; font-size: 8.5pt; font-weight: bold; text-transform: uppercase; }
+        .status-success { background-color: #dcfce7; color: #166534; }
+        .status-failed { background-color: #fee2e2; color: #991b1b; }
+        .score-section { display: flex; justify-content: center; margin-top: 40px; padding: 30px; background-color: #eff6ff; border-radius: 8px; border: 1px solid #bfdbfe; }
+        .score-circle { text-align: center; }
+        .score-value { font-size: 48pt; font-weight: 800; color: #1d4ed8; line-height: 1; }
+        .score-label { font-size: 12pt; color: #1e40af; font-weight: 600; margin-top: 5px; }
+        .footer { margin-top: 50px; font-size: 9pt; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="report-container">
+    <div class="header">
+        <div>
+            <h1>Evaluación de Seguridad Linux</h1>
+            <p style="margin: 5px 0 0 0; color: #64748b;">Auditoría de Cumplimiento SELinux</p>
+        </div>
+        <div class="meta-info">
+            <!-- Corregido: Uso de variables de inventario de Ansible -->
+            <strong>Host:</strong> {{ inventory_hostname | upper }} <br>
+            <strong>Fecha:</strong> <br>
+            <strong>ID Reporte:</strong> {{ 1000 | random }}
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Validación</th>
+                <th>Estado</th>
+                <th>Detalles de Salida</th>
+                <th>Ponderación</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in eval_items %}
+            <tr>
+                <td>{{ item.id }}</td>
+                <td style="font-weight: 500;">{{ item.name }}</td>
+                <td>
+                    <!-- Corregido: Clase dinámica según el estado -->
+                    <span class="status-pill {{ 'status-success' if item.status == 'SUCCESS' else 'status-failed' }}">
+                        {{ item.status }}
+                    </span>
+                </td>
+                <td style="font-family: monospace; color: #475569;">{{ item.detail }}</td>
+                <td>{{ item.weight }} pts</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+
+<div class="score-section">
+    <div class="score-circle">
+        <div class="score-value">{{ total_score }}</div>
+        <div class="score-label">PUNTAJE ACUMULADO</div>
+        
+        {# CORRECCIÓN AQUÍ: Agregamos | int en el color y en los if #}
+        <p style="margin: 10px 0 0 0; font-size: 10pt; font-weight: bold; color: {{ '#166534' if total_score | int >= 80 else '#991b1b' }};">
+            {% if total_score | int >= 80 %} 
+                APTO / PASS
+            {% elif total_score | int >= 50 %} 
+                REVISIÓN REQUERIDA
+            {% else %} 
+                NO APTO / FAIL
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+    <div class="footer">
+        Generado automáticamente por el Sistema de Auditoría para el proyecto 
+    </div>
+</div>
+
+</body>
+</html>

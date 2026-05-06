@@ -1,0 +1,79 @@
+---
+
+- name: Eliminar directorio selinux-opsmode
+  ansible.builtin.file:
+    path: "/var/www/html/simulator/{ failover_remote_project }}"
+    state: absent
+
+- name: Recrear directorio selinux-opsmode
+  ansible.builtin.file:
+    path: "/var/www/html/simulator/{ failover_remote_project }}"
+    state: directory
+    mode: '0755'
+
+
+- name: GEENERATOR REPORT - Leer el archivo de log desde el servidor remoto
+  slurp:
+    src: "/tmp/{{ failover_remote_project }}/simulate.log"
+  register: remote_file
+
+- name: Transformar contenido de forma abstracta
+  set_fact:
+    eval_items: >-
+      {% set items = [] %}
+      {# Decodificamos el contenido base64 de slurp y separamos por líneas #}
+      {% for line in (remote_file.content | b64decode).splitlines() %}
+        {% if line %}
+          {% set parts = line.split(':') %}
+          
+          {# Extracción de datos por posición (Abstracto) #}
+          {% set id_val  = parts[0] | int %}
+          {% set key_val = parts[1] %}
+          {% set status  = parts[2] | upper %}
+          {% set detail  = parts[3] %}
+
+          {# Lógica mínima de presentación #}
+          {% set display_name = (key_val | capitalize) if key_val != 'checked' else "Command: " ~ detail %}
+          
+          {# Peso: 10 si contiene 'getenforce', 15 por defecto #}
+          {% set weight_val = 10 if 'getenforce' in line else 15 %}
+
+          {% set _ = items.append({
+            'id': id_val,
+            'name': display_name,
+            'status': status,
+            'detail': detail,
+            'weight': weight_val
+          }) %}
+        {% endif %}
+      {% endfor %}
+      {{ items }}
+
+- name: Mostrar el resultado final
+  debug:
+    var: eval_items
+
+
+- name: Calcular calificación total (Filtro Jinja2)
+  set_fact:
+    total_score: "{{ eval_items | selectattr('status', 'equalto', 'SUCCESS') | map(attribute='weight') | sum }}"
+
+- name: Generar reporte HTML desde plantilla J2
+  template:
+    src: templates/report_template.j2    
+    dest: "/tmp/{{ failover_remote_project }}/index.html"       
+
+#- name: Aplicar contexto de SELinux al reporte generado
+#  sefcontext:
+#    target: "/var/www/html/simulator/{{ failover_remote_project}}/index.html"
+#    setype: httpd_sys_content_t
+#    state: present
+
+#- name: Ejecutar restorecon para aplicar el contexto
+#  command: "restorecon -v /var/www/html/simulator/{{ failover_remote_project }}/index.html"
+
+#- name: Asegurar que Apache esté corriendo
+#  service:
+#    name: httpd
+#    state: started
+#    enabled: yes
