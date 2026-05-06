@@ -1,9 +1,9 @@
 ---
 
-#- name: SIMULATE LAB - Reiniciar el sistema para velidar  SELINUX
-#  ansible.builtin.reboot:
-#    reboot_timeout: 600
-#    test_command:  "getenforce"
+- name: SIMULATE LAB - Reiniciar el sistema para velidar  SELINUX
+  ansible.builtin.reboot:
+    reboot_timeout: 600
+    test_command:  "getenforce"
 
 
 - name: SIMULATE LAB - Cerrar todas las sesiones SSH activas en servera, excepto la de Ansible
@@ -85,8 +85,8 @@
   become: yes
   ansible.builtin.shell:
     cmd: |
-      {% set status = 'success' if getenforce_output.stdout == 'Enforcing' else 'failed' %}
-      echo "2:getenforce:{{ status }}:Enforcing" >> {{ failover_remote_validator_temp }}/simulate.log
+      {% set status = 'success' if getenforce_output.stdout == 'Permissive' else 'failed' %}
+      echo "2:getenforce:{{ status }}:Permissive" >> {{ failover_remote_validator_temp }}/simulate.log
 
 - name: SIMULATE LAB - Obtener historial de comandos
   ansible.builtin.shell: |

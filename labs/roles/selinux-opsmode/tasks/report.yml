@@ -60,7 +60,6 @@
   debug:
     var: eval_items
 
-
 - name: Generar reporte HTML desde plantilla J2
   template:
     src: templates/report_template.j2    
