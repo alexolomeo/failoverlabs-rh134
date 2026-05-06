@@ -11,23 +11,25 @@
     eval_items_raw: []
     total_score: 0
 
-- name: Transformar contenido de forma abstracta
-  set_fact:
+- name: Parsear log a formato YAML (String)
+  vars:
+    dummy: "force_list"
     eval_items_raw: >-
       {% set ns = namespace(items=[]) %}
       {% for line in (remote_file.content | b64decode).splitlines() %}
         {% if line and ':' in line %}
           {% set parts = line.split(':') %}
+          
+          {# Verificamos que la línea tenga los 5 campos esperados #}
           {% if parts | length >= 5 %}
-            {# Solo entramos aquí si hay al menos 5 columnas #}
             {% set id_val = parts[0] | int %}
             {% set key_val = parts[1] %}
             {% set status_val = parts[2] | upper %}
             {% set detail_val = parts[3] %}
             {% set weight_val = parts[4] | int %}
-            
+
             {% set display_name = (key_val | capitalize) if key_val != 'checked' else "Command: " ~ detail_val %}
-            
+
             {% set _ = ns.items.append({
               'id': id_val,
               'name': display_name,
@@ -38,28 +40,29 @@
           {% endif %}
         {% endif %}
       {% endfor %}
-      {{ ns.items | to_json }}
-
-- name: Convertir a lista real
+      {{ ns.items | to_yaml }}    
   set_fact:
-    eval_items: "{{ eval_items_raw | from_json }}"
+    eval_items: "{{ eval_items_raw | from_yaml }}"
+  # Esta es la parte CRUCIAL:
+  #vars:
+  #  dummy: "force_list"
 
-- name: Depuración de seguridad (Opcional)
-  debug:
-    msg: "Se procesaron {{ eval_items | length }} líneas correctamente."
 
-- name: Calcular calificación total
-  set_fact:
-    total_score: "{{ eval_items | selectattr('status', 'equalto', 'SUCCESS') | map(attribute='weight') | list | sum | int }}"
+#- name:  Convertir String a Lista Real de Ansible
+#  set_fact:
+#    eval_items: "{{ eval_items_raw | from_json }}"
 
-- name: Mostrar el resultado final
-  debug:
-    msg: "Puntaje Total: {{ total_score }} sobre una lista de {{ eval_items | length }} items."
+#- name:  Calcular score (Asegurando que sea dinámico)
+#  set_fact:
+#    total_score: "{{ eval_items | selectattr('status', 'equalto', 'SUCCESS') | map(attribute='weight') | list | sum | int }}"
 
 - name: Mostrar el resultado final
   debug:
     var: eval_items
 
+- name: Debug contenido crudoi JSON
+  debug:
+    var: eval_items_raw
 
 - name: Generar reporte HTML desde plantilla J2
   template:

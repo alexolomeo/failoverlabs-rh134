@@ -5,48 +5,39 @@
     src: "{{ failover_remote_validator_temp }}/simulate.log"
   register: remote_file
 
-- name: Limpiar variable eval_items para evitar persistencia
-  set_fact:
-    eval_items: []
-    eval_items_raw: []
-    total_score: 0
-
 - name: Transformar contenido de forma abstracta
   set_fact:
-    eval_items_raw: >-
+    # Usamos from_yaml para que la cadena generada se convierta en una lista real
+    eval_items: >-
       {% set ns = namespace(items=[]) %}
       {% for line in (remote_file.content | b64decode).splitlines() %}
         {% if line and ':' in line %}
           {% set parts = line.split(':') %}
-          {% if parts | length >= 5 %}
-            {# Solo entramos aquí si hay al menos 5 columnas #}
-            {% set id_val = parts[0] | int %}
-            {% set key_val = parts[1] %}
-            {% set status_val = parts[2] | upper %}
-            {% set detail_val = parts[3] %}
-            {% set weight_val = parts[4] | int %}
-            
-            {% set display_name = (key_val | capitalize) if key_val != 'checked' else "Command: " ~ detail_val %}
-            
-            {% set _ = ns.items.append({
-              'id': id_val,
-              'name': display_name,
-              'status': status_val,
-              'detail': detail_val,
-              'weight': weight_val
-            }) %}
-          {% endif %}
+          {% set id_val = parts[0] | int %}
+          {% set key_val = parts[1] %}
+          {% set status_val = parts[2] | upper %}
+          {% set detail_val = parts[3] %}
+          {% set weight_val = parts[4] | int %}
+
+          {% set display_name = (key_val | capitalize) if key_val != 'checked' else "Command: " ~ detail_val %}
+
+          {% set _ = ns.items.append({
+            'id': id_val,
+            'name': display_name,
+            'status': status_val,
+            'detail': detail_val,
+            'weight': weight_val | int
+          }) %}
         {% endif %}
       {% endfor %}
-      {{ ns.items | to_json }}
+      {{ ns.items | to_yaml }}
+  # Esta es la parte CRUCIAL:
+  vars:
+    dummy: "force_list"
 
-- name: Convertir a lista real
+# Convertimos el string de salida en una lista real de Ansible
   set_fact:
-    eval_items: "{{ eval_items_raw | from_json }}"
-
-- name: Depuración de seguridad (Opcional)
-  debug:
-    msg: "Se procesaron {{ eval_items | length }} líneas correctamente."
+    eval_items: "{{ eval_items | from_yaml }}"
 
 - name: Calcular calificación total
   set_fact:

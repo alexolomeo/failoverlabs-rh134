@@ -72,6 +72,24 @@
     </table>
 
 
+<div class="score-section">
+    <div class="score-circle">
+        <div class="score-value">{{ total_score }}</div>
+        <div class="score-label">PUNTAJE ACUMULADO</div>
+        
+        {# CORRECCIÓN AQUÍ: Agregamos | int en el color y en los if #}
+        <p style="margin: 10px 0 0 0; font-size: 10pt; font-weight: bold; color: {{ '#166534' if total_score | int >= 80 else '#991b1b' }};">
+            {% if total_score | int >= 80 %} 
+                APTO / PASS
+            {% elif total_score | int >= 50 %} 
+                REVISIÓN REQUERIDA
+            {% else %} 
+                NO APTO / FAIL
+            {% endif %}
+        </p>
+    </div>
+</div>
+
     <div class="footer">
         Generado automáticamente por  RHEL9 y Ansible 
     </div>
