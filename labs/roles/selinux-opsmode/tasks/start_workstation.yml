@@ -117,22 +117,6 @@
         mode: 0775
         force: yes
 
-    - name: "START CONFIG LAB - Ensure app workdir exists: {{ failover_workdir_exam }}/{{ failover_number }}"
-      become: yes
-      ansible.builtin.file:
-        path: "{{ failover_workdir_exam }}/{{ failover_number }}"
-        state: directory
-        mode: 0775
-        force: yes
-
-    - name: "START CONFIG LAB - Ensure app workdir exists: {{ failover_workdir_exam_eval }}/{{ failover_number }}"
-      become: yes
-      ansible.builtin.file:
-        path: "{{ failover_workdir_exam_eval }}/{{ failover_number }}"
-        state: directory
-        mode: 0775
-        force: yes
-
     - name: START CONFIG LAB - Set to delegate variable from workstation to servera
       set_fact:
         failover_number: "{{ failover_number }}"

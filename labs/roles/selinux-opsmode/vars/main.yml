@@ -1,0 +1,9 @@
+# vars/main.yml
+eval_items:
+  - { id: 1, name: "SELinux Mode", status: "SUCCESS", detail: "Enforcing", weight: 15 }
+  - { id: 1, name: "SELinux Policy", status: "SUCCESS", detail: "Targeted", weight: 15 }
+  - { id: 2, name: "Getenforce Check", status: "FAILED", detail: "Mismatch", weight: 15 }
+  - { id: 3, name: "Command: getenforce", status: "SUCCESS", detail: "Available", weight: 10 }
+  - { id: 4, name: "Command: setenforce 1", status: "SUCCESS", detail: "Operational", weight: 15 }
+  - { id: 5, name: "Command: setenforce 0", status: "SUCCESS", detail: "Operational", weight: 15 }
+  - { id: 6, name: "Systemctl Reboot", status: "FAILED", detail: "Error/Denied", weight: 15 }

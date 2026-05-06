@@ -106,7 +106,7 @@
     path: "{{ failover_remote_validator_temp }}/simulate.log"
     create: yes
     line: >-
-      {{ item.id }}:history:{{ 'success' if (history_output.stdout | regex_search(item.regex, multiline=True)) else 'failed' }}:{{ item.label }}
+      {{ item.id }}:checked:{{ 'success' if (history_output.stdout | regex_search(item.regex, multiline=True)) else 'failed' }}:{{ item.label }}
   loop: "{{ validator_history }}"
 
 
@@ -143,7 +143,14 @@
   loop: "{{ validator_journal }}"
   changed_when: false
 
-- name: "SIMULATE LAB - Leer contenido del log en servera"
+- name: "SIMULATE LAB - Crear  journal.log en workstation con el contenido leído de la variable journal_output"
+  delegate_to: workstation
+  ansible.builtin.copy:
+    content: "{{ journal_output.stdout }}"
+    dest: "{{ failover_remote_validator_temp }}/journal.log"
+    mode: '0644'
+
+- name: "SIMULATE LAB - Leer contenido del simulate.log en servera"
   ansible.builtin.slurp:
     src: "{{ failover_remote_validator_temp }}/simulate.log"
   register: remote_log
@@ -155,3 +162,34 @@
     content: "{{ remote_log['content'] | b64decode }}"
     dest: "{{ failover_remote_validator_temp }}/simulate.log"
     mode: '0644'
+
+- name: "SIMULATE LAB - Leer contenido del history.log en servera"
+  ansible.builtin.slurp:
+    src: "{{ failover_remote_validator_temp }}/history.log"
+  register: history_log
+
+- name: "SIMULATE LAB - Crear el archivo history.log en workstation con el contenido leído"
+  delegate_to: workstation
+  ansible.builtin.copy:
+    content: "{{ history_log['content'] | b64decode }}"
+    dest: "{{ failover_remote_validator_temp }}/history.log"
+    mode: '0644'
+
+- name: "SIMULATE LAB - Obtener ID de secuencia desde workstation"
+  delegate_to: workstation
+  ansible.builtin.command: cat "{{ failover_remote_workspace }}/{{ failover_remote_project }}/sequence/sequence.ini"
+  register: lab_sequence_raw
+  changed_when: false
+
+- name: "SIMULATE LAB - Establecer ID de laboratorio como fact"
+  set_fact:
+    lab_id: "{{ lab_sequence_raw.stdout | trim }}"
+
+- name: "SIMULATE LAB - Sincronizar resultados a la ruta final en workstation"
+  delegate_to: workstation
+  become: yes
+  ansible.builtin.copy:
+    src: "/tmp/{{ failover_remote_project }}"
+    dest: "{{ failover_remote_workdir_simulate }}/{{ lab_id }}/"
+    remote_src: yes
+    mode: '0755'
