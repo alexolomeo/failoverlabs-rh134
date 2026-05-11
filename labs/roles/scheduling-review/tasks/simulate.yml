@@ -1,0 +1,137 @@
+---
+
+
+
+- name: SIMULATE LAB - Cerrar todas las sesiones SSH activas en servera, excepto la de Ansible
+  become: yes
+  ansible.builtin.shell: |
+    # Obtener la lista de procesos sshd relacionados con root y student
+    sessions=$(ps -eo pid,cmd | grep 'sshd' | grep -v 'grep' | grep -vE '(root|student)@pts/\d+' | grep pts | awk '{print $1}')
+    # Contar cuántas líneas hay en la salida
+    num_sessions=$(echo "$sessions" | wc -l)
+    # Si hay solo un proceso, no hacer nada
+    if [ "$num_sessions" -eq 1 ]; then
+      echo "Solo hay una sesión SSH activa. No se mata ningún proceso."
+    else
+      # Si hay más de uno, matar todos menos el último
+      # Iterar sobre las líneas de salida excepto la última
+      for pid in $(echo "$sessions" | head -n -1); do
+        # Matar las sesiones SSH activas (de otros usuarios)
+        kill -9 $pid 2>/dev/null || true
+        logger -p local7.info -t "LAB-RH134" "simulate validate {{ failover_remote_project }}  process SSH kill : $pid  "
+      done
+    fi
+
+  ignore_errors: yes  # No interrumpir la ejecución si alguna sesión no se puede matar
+
+
+- name: SIMULATE LAB - Forzar la actualización del historial
+  become: yes
+  ansible.builtin.shell:
+    cmd: "history -a && history -n"
+
+- name: SIMULATE LAB - Establecer flag en Workstation si el lab está activo
+  delegate_to: workstation
+  ansible.builtin.file:
+    path: "{{ failover_remote_validator_temp }}/active-simulate"
+    state: touch
+    mode: '0644'
+
+- name: "SIMULATE LAB - Crear file validator: {{ failover_remote_validator_temp }}/simulate.log temporal"
+  become: yes
+  ansible.builtin.file:
+    path: "{{ failover_remote_validator_temp }}/simulate.log"
+    state: touch
+    mode: 0644
+
+- name: SIMULATE LAB - Obtener historial de comandos
+  ansible.builtin.shell: |
+    history -a  # Fuerza la escritura de la sesión actual al archivo
+    cat /root/.bash_history
+  register: history_output
+
+- name: SIMULATE LAB - Escribir historial en archivo log
+  become: yes
+  ansible.builtin.copy:
+    content: "{{ history_output.stdout }}"
+    dest: "{{ failover_remote_validator_temp }}/history.log"
+    mode: '0644'
+
+- name: SIMULATE LAB - Validar comandos en el historial
+  ansible.builtin.lineinfile:
+    path: "{{ failover_remote_validator_temp }}/simulate.log"
+    create: yes
+    line: >-
+      {{ item.id }}:checked:{{ 'success' if (history_output.stdout | regex_search(item.regex, multiline=True)) else 'failed' }}:{{ item.label }}:{{ item.weight }}
+  loop: "{{ validator_history }}"
+
+- name: SIMULATE LAB - Verificar que atq devuelva 
+  become: yes
+  ansible.builtin.command:
+    cmd: atq
+  register: atq_output
+  changed_when: false
+
+- name: "SIMULATE LAB - Procesar resultados de validación"
+  set_fact:
+    at_results: >-
+      {%- set content = atq_output.stdout -%}
+      {%- if content | regex_search(item.regex) -%}
+      {{ item.id }}:{{ item.label }}:success:{{ item.regex }}:{{ item.weight }}
+      {%- else -%}
+      {{ item.id }}:{{ item.label }}:failed:{{ item.regex }}:{{ item.weight }}
+      {%- endif -%}
+  loop: "{{ validator_at }}"
+  register: processed_lines
+
+- name: "SIMULATE LAB - Registrar resultados en log"
+  become: yes
+  ansible.builtin.lineinfile:
+    path: "{{ failover_remote_validator_temp }}/simulate.log"
+    create: yes
+    line: "{{ item.ansible_facts.at_results }}"
+    mode: '0644'
+  loop: "{{ processed_lines.results }}"
+
+- name: "SIMULATE LAB - Leer contenido del simulate.log en servera"
+  ansible.builtin.slurp:
+    src: "{{ failover_remote_validator_temp }}/simulate.log"
+  register: remote_log
+
+- name: "SIMULATE LAB - Crear el archivo en workstation con el contenido leído"
+  delegate_to: workstation
+  ansible.builtin.copy:
+    content: "{{ remote_log['content'] | b64decode }}"
+    dest: "{{ failover_remote_validator_temp }}/simulate.log"
+    mode: '0644'
+
+- name: "SIMULATE LAB - Leer contenido del history.log en servera"
+  ansible.builtin.slurp:
+    src: "{{ failover_remote_validator_temp }}/history.log"
+  register: history_log
+
+- name: "SIMULATE LAB - Crear el archivo history.log en workstation con el contenido leído"
+  delegate_to: workstation
+  ansible.builtin.copy:
+    content: "{{ history_log['content'] | b64decode }}"
+    dest: "{{ failover_remote_validator_temp }}/history.log"
+    mode: '0644'
+
+- name: "SIMULATE LAB - Obtener ID de secuencia desde workstation"
+  delegate_to: workstation
+  ansible.builtin.command: cat "{{ failover_remote_workspace }}/{{ failover_remote_project }}/sequence/sequence.ini"
+  register: lab_sequence_raw
+  changed_when: false
+
+- name: "SIMULATE LAB - Establecer ID de laboratorio como fact"
+  set_fact:
+    lab_id: "{{ lab_sequence_raw.stdout | trim }}"
+
+- name: "SIMULATE LAB - Sincronizar resultados a la ruta final en workstation"
+  delegate_to: workstation
+  become: yes
+  ansible.builtin.copy:
+    src: "/tmp/{{ failover_remote_project }}"
+    dest: "{{ failover_remote_workdir_simulate }}/{{ lab_id }}/"
+    remote_src: yes
+    mode: '0755'

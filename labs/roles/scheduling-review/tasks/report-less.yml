@@ -1,0 +1,106 @@
+---
+
+- name: GENERATOR REPORT - Leer el archivo de log
+  slurp:
+    src: "{{ failover_remote_validator_temp }}/simulate.log"
+  register: remote_file
+
+- name: Transformar contenido de forma abstracta
+  set_fact:
+    # Usamos from_yaml para que la cadena generada se convierta en una lista real
+    eval_items: >-
+      {% set ns = namespace(items=[]) %}
+      {% for line in (remote_file.content | b64decode).splitlines() %}
+        {% if line and ':' in line %}
+          {% set parts = line.split(':') %}
+          {% set id_val = parts[0] | int %}
+          {% set key_val = parts[1] %}
+          {% set status_val = parts[2] | upper %}
+          {% set detail_val = parts[3] %}
+          {% set weight_val = parts[4] | int %}
+
+          {% set display_name = (key_val | capitalize) if key_val != 'checked' else "Command: " ~ detail_val %}
+
+          {% set _ = ns.items.append({
+            'id': id_val,
+            'name': display_name,
+            'status': status_val,
+            'detail': detail_val,
+            'weight': weight_val | int
+          }) %}
+        {% endif %}
+      {% endfor %}
+      {{ ns.items | to_yaml }}
+  # Esta es la parte CRUCIAL:
+  vars:
+    dummy: "force_list"
+
+# Convertimos el string de salida en una lista real de Ansible
+  set_fact:
+    eval_items: "{{ eval_items | from_yaml }}"
+
+- name: Calcular calificación total
+  set_fact:
+    total_score: "{{ eval_items | selectattr('status', 'equalto', 'SUCCESS') | map(attribute='weight') | list | sum | int }}"
+
+- name: Mostrar el resultado final
+  debug:
+    msg: "Puntaje Total: {{ total_score }} sobre una lista de {{ eval_items | length }} items."
+
+- name: Mostrar el resultado final
+  debug:
+    var: eval_items
+
+
+- name: Generar reporte HTML desde plantilla J2
+  template:
+    src: templates/report_template.j2    
+    dest: "{{ failover_remote_validator_temp }}/report_index.html"       
+
+- name: "REPORT LAB - Leer contenido del simulate.log en servera"
+  ansible.builtin.slurp:
+    src: "{{ failover_remote_validator_temp }}/report_index.html"
+  register: report_log
+
+- name: Eliminar report_index.html en el servidor destino
+  delegate_to: workstation
+  ansible.builtin.file:
+    path: "{{ failover_remote_validator_temp }}/report_index.html"
+    state: absent
+
+- name: "REPORT LAB - Crear el archivo en workstation con el contenido leído"
+  delegate_to: workstation
+  ansible.builtin.copy:
+    content: "{{ report_log['content'] | b64decode }}"
+    dest: "{{ failover_remote_validator_temp }}/report_index.html"
+    mode: '0644'
+
+- name: Eliminar directorio en el servidor destino
+  delegate_to: workstation
+  ansible.builtin.file:
+    path: "/var/www/html/simulator/{{ failover_remote_project }}"
+    state: absent
+
+- name: Recrear directorio en el servidor destino
+  delegate_to: workstation
+  ansible.builtin.file:
+    path: "/var/www/html/simulator/{{ failover_remote_project }}"
+    state: directory
+    mode: '0755'
+
+- name: Copiar archivo desde servidor origen al destino
+  delegate_to: workstation
+  ansible.builtin.copy:
+    src: "/tmp/{{ failover_remote_project }}/report_index.html"
+    dest: "/var/www/html/simulator/{{ failover_remote_project }}/index.html"
+    mode: '0644'
+
+#- name: Aplicar contexto de SELinux al reporte generado
+#  sefcontext:
+#    target: "/var/www/html/simulator/{{ failover_remote_project}}/index.html"
+#    setype: httpd_sys_content_t
+#    state: present
+
+#- name: Ejecutar restorecon para aplicar el contexto
+#  command: "restorecon -v /var/www/html/simulator/{{ failover_remote_project }}/index.html"
+

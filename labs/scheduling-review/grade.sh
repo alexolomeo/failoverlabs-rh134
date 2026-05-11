@@ -1,6 +1,7 @@
 #!/bin/bash
+LAB_NAME=$1
 
-if [[ -f /tmp/console_lab_file ]]; then
+if [[ -f /tmp/$LAB_NAME ]]; then
     echo "✔ Lab completado correctamente"
     exit 0
 else

@@ -17,6 +17,13 @@
         state: started
         enabled: yes
     
+    - name: "INIT CONFIG LAB - Create file /var/log/labtool.log"
+      become: yes
+      ansible.builtin.file:
+        path: "/var/log/labtool.log"
+        state: touch
+        mode: 0775
+
     - name: "INIT CONFIG LAB - Create directory config: {{ failover_config }}"
       become: yes
       ansible.builtin.file:
