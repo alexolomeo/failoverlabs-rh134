@@ -88,7 +88,7 @@ case "$ACTION" in
         log_action "start" "$LAB_NAME"
         if [[ -x "$LAB_PATH/setup.sh" ]]; then
             echo "Iniciando laboratorio: $LAB_NAME"
-            "$LAB_PATH/setup.sh"
+            "$LAB_PATH/setup.sh" $LAB_NAME
         else
             echo "No hay script de inicio (setup.sh)"
         fi
@@ -99,7 +99,7 @@ case "$ACTION" in
 	check_expire_lab
         if [[ -x "$LAB_PATH/simulate.sh" ]]; then
             echo "Simulador ...Evaluando laboratorio: $LAB_NAME"
-            "$LAB_PATH/simulate.sh"
+            "$LAB_PATH/simulate.sh" $LAB_NAME
 	    echo "------------------------------"
 	    cat /tmp/$LAB_NAME/simulate.log
 	    echo "------------------------------"
@@ -111,7 +111,7 @@ case "$ACTION" in
     report)
         if [[ -x "$LAB_PATH/report.sh" ]]; then
             echo "Report Generator...Evaluando laboratorio: $LAB_NAME"
-            "$LAB_PATH/report.sh"
+            "$LAB_PATH/report.sh" $LAB_NAME
 	    echo " "
 	    printf "%-5s Reporte Evaluacion de  $LAB_NAME....\n"
 	    printf "%-5s - http://workstation/simulator/$LAB_NAME/ \n"
