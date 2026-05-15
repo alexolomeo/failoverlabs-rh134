@@ -62,7 +62,7 @@
     path: "{{ failover_remote_validator_temp }}/simulate.log"
     create: yes
     line: >-
-      {{ item.id }}:checked:{{ 'success' if (history_output.stdout | regex_search(item.regex, multiline=True)) else 'failed' }}:{{ item.label }}:{{ item.weight }}
+      {{ item.id }}:Checked:{{ 'success' if (history_output.stdout | regex_search(item.regex, multiline=True)) else 'failed' }}:{{ item.label }}:{{ item.weight }}
   loop: "{{ validator_history }}"
 
 - name: SIMULATE LAB - Verificar que atq devuelva 
@@ -90,6 +90,33 @@
     path: "{{ failover_remote_validator_temp }}/simulate.log"
     create: yes
     line: "{{ item.ansible_facts.at_results }}"
+    mode: '0644'
+  loop: "{{ processed_lines.results }}"
+
+- name: "SIMULATE LAB - Obtener lista de archivos existentes en el sistema con validator_file"
+  ansible.builtin.shell: "find /home/student -maxdepth 2 -type f"
+  register: files_output
+  changed_when: false
+  failed_when: false
+
+- name: "SIMULATE LAB - Procesar resultados de validación validator_file"
+  ansible.builtin.set_fact:
+    file_results_line: >-
+      {%- set content = files_output.stdout -%}
+      {%- if content | regex_search(item.regex) -%}
+      {{ item.id }}:{{ item.label }}:success:{{ item.regex | basename }}:{{ item.weight }}
+      {%- else -%}
+      {{ item.id }}:{{ item.label }}:failed:{{ item.regex | basename }}:{{ item.weight }}
+      {%- endif -%}
+  loop: "{{ validator_file }}"
+  register: processed_lines
+
+- name: "SIMULATE LAB - Registrar resultados en log validator_file"
+  become: yes
+  ansible.builtin.lineinfile:
+    path: "{{ failover_remote_validator_temp }}/simulate.log"
+    create: yes
+    line: "{{ item.ansible_facts.file_results_line }}"
     mode: '0644'
   loop: "{{ processed_lines.results }}"
 
