@@ -39,6 +39,9 @@
       validator_at:
         - { id: "10", label: "Get comand AT" , regex: "g student" ,weight: 20}
         - { id: "11", label: "Get comand AT" , regex: "b student" ,weight: 20}
+      validator_file:
+        - { id: "12", label: "Check File" , regex: "/home/student/myjob.txt" ,weight: 20}
+        - { id: "13", label: "Check File" , regex: "/home/student/cookies.txt" ,weight: 20}
 
 
         

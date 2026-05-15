@@ -100,7 +100,10 @@ case "$ACTION" in
         if [[ -x "$LAB_PATH/simulate.sh" ]]; then
             echo "Simulador ...Evaluando laboratorio: $LAB_NAME"
             "$LAB_PATH/simulate.sh"
+	    echo "------------------------------"
 	    cat /tmp/$LAB_NAME/simulate.log
+	    echo "------------------------------"
+
         else
             echo "No hay script de evaluación (simulate.sh)"
         fi
@@ -109,6 +112,10 @@ case "$ACTION" in
         if [[ -x "$LAB_PATH/report.sh" ]]; then
             echo "Report Generator...Evaluando laboratorio: $LAB_NAME"
             "$LAB_PATH/report.sh"
+	    echo " "
+	    printf "%-5s Reporte Evaluacion de  $LAB_NAME....\n"
+	    printf "%-5s - http://workstation/simulator/$LAB_NAME/ \n"
+	    echo " "
         else
             echo "No hay script de evaluación (simulate.sh)"
         fi
