@@ -1,28 +1,28 @@
 ---
 
-- name: scheduling review
+- name: scheduling at
   hosts: workstation
   gather_facts: no
   become: true
   vars: 
     failover_mode: "start"
   roles:
-    - role: scheduling-review
-      failover_project: scheduling-review               # lab <failover_mode> <failover_project>
+    - role: scheduling-at
+      failover_project: scheduling-at               # lab <failover_mode> <failover_project>
       failover_environment: "workstation"               # workstation, servera serverb 
       failover_user: root 
       failover_group: root
 
 
-- name: scheduling review
+- name: scheduling at
   hosts: servera
   gather_facts: no
   become: true
   vars: 
     failover_mode: "start"
   roles:
-    - role: scheduling-review
-      failover_remote_project: scheduling-review
+    - role: scheduling-at
+      failover_remote_project: scheduling-at
       failover_remote_environment: "servera"              # workstation, servera serverb 
       failover_remote_user: root
       failover_remote_group: root

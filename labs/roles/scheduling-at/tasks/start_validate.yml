@@ -17,9 +17,15 @@
   register: at_jobs
   changed_when: false
 
-- name: START VALIDATE LAB -Eliminar cada tarea encontrada
+- name: START VALIDATE LAB - Eliminar cada tarea encontrada
   shell: "atrm {{ item }}"
   loop: "{{ at_jobs.stdout_lines }}"
   when: at_jobs.stdout_lines | length > 0
   register: result
 
+- name: START VALIDATE LAB - Verificar y remover archivos generados
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ validator_start_file }}"
+  ignore_errors: yes

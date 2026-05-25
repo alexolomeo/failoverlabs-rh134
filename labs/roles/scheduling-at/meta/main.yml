@@ -1,8 +1,8 @@
 galaxy_info:
-  role_name: selinux-opsmode
+  role_name: scheduling-at
   namespace: lab_automation
   author: Alexander Aguilar Torrico
-  description: Selinuz Verification
+  description: AT scheduling Verification
   company: Failover BO.
 
   license: Apache License 2.0

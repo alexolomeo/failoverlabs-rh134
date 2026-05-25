@@ -5,7 +5,7 @@
 
     - name: Configurar failover_number en servera
       debug:
-        msg: "========== La variable failover_number es: {{ failover_number }} ============="
+        msg: "* La variable failover_number es: {{ failover_number }} "
       when: inventory_hostname in groups['servera']
 
     - name: "START CONFIG LAB - Borrar historial de root permanentemente"
