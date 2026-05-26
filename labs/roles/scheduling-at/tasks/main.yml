@@ -46,9 +46,9 @@
 
 - name: "Finish lab"
   block:
-    - include_tasks: clean.yml
+    - include_tasks: finish_validate.yml
 
   when: 
-    - failover_mode == "grade"  
+    - failover_mode == "finish"  
     - failover_remote_environment == "servera"  
 

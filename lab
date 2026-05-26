@@ -63,7 +63,9 @@ check_expire_lab() {
 	    echo "	--------------------------------------------------------------"
 	    exit 1
 	else
-	    echo "Validación correcta: Dentro del tiempo permitido. Continuando..."
+	    echo ""
+	    echo "Validación correcta: Dentro del tiempo permitido."
+	    echo ""
 	fi
     fi
 }
@@ -100,9 +102,9 @@ case "$ACTION" in
         if [[ -x "$LAB_PATH/simulate.sh" ]]; then
             echo "Simulador ...Evaluando laboratorio: $LAB_NAME"
             "$LAB_PATH/simulate.sh" $LAB_NAME
-	    echo "------------------------------"
-	    cat /tmp/$LAB_NAME/simulate.log
-	    echo "------------------------------"
+	    #echo "------------------------------"
+	    #cat /tmp/$LAB_NAME/simulate.log | awk -F: '{NF--; print $0}' OFS=:
+	    #echo "------------------------------"
 
         else
             echo "No hay script de evaluación (simulate.sh)"
@@ -133,7 +135,7 @@ case "$ACTION" in
         log_action "finish" "$LAB_NAME"
         if [[ -x "$LAB_PATH/cleanup.sh" ]]; then
             echo "Finalizando laboratorio: $LAB_NAME"
-            "$LAB_PATH/cleanup.sh"
+            "$LAB_PATH/cleanup.sh" $LAB_NAME
         else
             echo "No hay script de limpieza (cleanup.sh)"
         fi

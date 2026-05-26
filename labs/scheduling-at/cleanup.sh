@@ -53,11 +53,11 @@ print_line "· Checking lab systems" "SUCCESS"
 sleep 2
 print_line "· Removing deferred jobs for student on servera" "SUCCESS"
 sleep 2
-print_line "· Removing /home/student/myjob.txt does not exist on servera" "SUCCESS"
+print_line "· Removing /home/student/myjob.txt from servera" "SUCCESS"
 sleep 2
-print_line "· Removing /home/student/tea.txt does not exist on servera" "SUCCESS"
+print_line "· Removing /home/student/tea.txt from servera" "SUCCESS"
 sleep 2
-print_line "· Removing /home/student/cookies.txt does not exist on servera" "SUCCESS"
+print_line "· Removing /home/student/cookies.txt from servera" "SUCCESS"
 echo ""
 
 cat /tmp/$LAB_NAME.log | tail -3

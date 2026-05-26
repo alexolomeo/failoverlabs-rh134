@@ -62,7 +62,7 @@
     path: "{{ failover_remote_validator_temp }}/simulate.log"
     create: yes
     line: >-
-      {{ item.id }}:Checked:{{ 'success' if (history_output.stdout | regex_search(item.regex, multiline=True)) else 'failed' }}:{{ item.label }}:{{ item.weight }}
+      {{ item.id }}:{{ item.label }}: (CHECKED) :{{ 'SUCCESS' if (history_output.stdout | regex_search(item.regex, multiline=True)) else 'FAILED' }}:{{ item.weight }}
   loop: "{{ validator_history }}"
 
 - name: SIMULATE LAB - Verificar que atq devuelva 
@@ -77,9 +77,9 @@
     at_results: >-
       {%- set content = atq_output.stdout -%}
       {%- if content | regex_search(item.regex) -%}
-      {{ item.id }}:{{ item.label }}:success:{{ item.regex }}:{{ item.weight }}
+      {{ item.id }}:{{ item.label }}: (CHECKED) :SUCCESS:{{ item.weight }}
       {%- else -%}
-      {{ item.id }}:{{ item.label }}:failed:{{ item.regex }}:{{ item.weight }}
+      {{ item.id }}:{{ item.label }}: (CHECKED) :FAILED:{{ item.weight }}
       {%- endif -%}
   loop: "{{ validator_at }}"
   register: processed_lines
@@ -104,9 +104,9 @@
     file_results_line: >-
       {%- set content = files_output.stdout -%}
       {%- if content | regex_search(item.regex) -%}
-      {{ item.id }}:{{ item.label }}:success:{{ item.regex | basename }}:{{ item.weight }}
+      {{ item.id }}:{{ item.label }}:{{ item.regex | basename }} (CHECKED) :SUCCESS:{{ item.weight }}
       {%- else -%}
-      {{ item.id }}:{{ item.label }}:failed:{{ item.regex | basename }}:{{ item.weight }}
+      {{ item.id }}:{{ item.label }}:{{ item.regex | basename }} (CHECKED) :FAILED:{{ item.weight }}
       {%- endif -%}
   loop: "{{ validator_file }}"
   register: processed_lines

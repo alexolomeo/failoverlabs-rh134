@@ -1,0 +1,31 @@
+---
+
+- name: "FINISH VALIDDATE LAB - Eliminar archivo de history del bash  {{ ansible_env.HOME }}/.bash_history, using shell: {{ ansible_env.SHELL }} "
+  become: yes
+  ansible.builtin.file:
+    path: "root/.bash_history"
+    state: absent  
+  ignore_errors: yes
+
+- name: FINISH VALIDDATE LAB - Limpiar el historial de bash
+  become: yes
+  ansible.builtin.shell: "history -c "
+  ignore_errors: yes
+
+- name: FINISH VALIDATE LAB - Obtener lista de IDs de tareas de AT
+  shell: "atq | awk '{print $1}'"
+  register: at_jobs
+  changed_when: false
+
+- name: FINISH VALIDATE LAB - Eliminar cada tarea encontrada
+  shell: "atrm {{ item }}"
+  loop: "{{ at_jobs.stdout_lines }}"
+  when: at_jobs.stdout_lines | length > 0
+  register: result
+
+- name: FINISH VALIDATE LAB - Verificar y remover archivos generados
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ validator_start_file }}"
+  ignore_errors: yes
