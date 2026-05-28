@@ -30,12 +30,21 @@
   ansible.builtin.shell:
     cmd: "history -a && history -n"
 
-- name: SIMULATE LAB - Establecer flag en Workstation si el lab está activo
+- name: SIMULATE LAB - Establecer flag en Workstation si el lab simulate está activo
   delegate_to: workstation
   ansible.builtin.file:
     path: "{{ failover_remote_validator_temp }}/active-simulate"
     state: touch
     mode: '0644'
+  when: failover_mode == 'simulate'
+
+- name: SIMULATE LAB - Establecer flag en Workstation si el lab grade está activo
+  delegate_to: workstation
+  ansible.builtin.file:
+    path: "{{ failover_remote_validator_temp }}/active-grade"
+    state: touch
+    mode: '0644'
+  when: failover_mode == 'grade'
 
 - name: "SIMULATE LAB - Validar y configurar el nombre del archivo según el failover_mode"
   ansible.builtin.set_fact:
@@ -160,7 +169,7 @@
   set_fact:
     lab_id: "{{ lab_sequence_raw.stdout | trim }}"
 
-- name: "SIMULATE LAB - Sincronizar resultados a la ruta final en workstation"
+- name: "SIMULATE LAB - Sincronizar resultados simulate a la ruta final en workstation"
   delegate_to: workstation
   become: yes
   ansible.builtin.copy:
@@ -168,3 +177,14 @@
     dest: "{{ failover_remote_workdir_simulate }}/{{ lab_id }}/"
     remote_src: yes
     mode: '0755'
+  when: failover_mode == 'simulate'
+
+- name: "SIMULATE LAB - Sincronizar resultados grade a la ruta final en workstation"
+  delegate_to: workstation
+  become: yes
+  ansible.builtin.copy:
+    src: "/tmp/{{ failover_remote_project }}"
+    dest: "{{ failover_remote_workdir_exam }}/{{ lab_id }}/"
+    remote_src: yes
+    mode: '0755'
+  when: failover_mode == 'grade'

@@ -37,7 +37,7 @@
 
 - name: "Grade lab"
   block:
-    - include_tasks: grade.yml
+    - include_tasks: simulate.yml
 
   when: 
     - failover_mode == "grade"  
