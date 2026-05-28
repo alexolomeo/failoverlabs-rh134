@@ -59,7 +59,7 @@ check_expire_lab() {
 	if [ "$DIFERENCIA_MIN" -gt $EXPIRATION_LIMIT ]; then
 	    echo "	--------------------------------------------------------------"
 	    echo "		ALERTA: Han pasado más de $EXPIRATION_LIMIT minutos ($DIFERENCIA_MIN min)."
-	    echo "		Ejecutar nuevamente: lab start selinux-opsmode             "	
+	    echo "		Ejecutar nuevamente: lab start $LAB_NAME             "	
 	    echo "	--------------------------------------------------------------"
 	    exit 1
 	else
@@ -102,10 +102,6 @@ case "$ACTION" in
         if [[ -x "$LAB_PATH/simulate.sh" ]]; then
             echo "Simulador ...Evaluando laboratorio: $LAB_NAME"
             "$LAB_PATH/simulate.sh" $LAB_NAME
-	    #echo "------------------------------"
-	    #cat /tmp/$LAB_NAME/simulate.log | awk -F: '{NF--; print $0}' OFS=:
-	    #echo "------------------------------"
-
         else
             echo "No hay script de evaluación (simulate.sh)"
         fi

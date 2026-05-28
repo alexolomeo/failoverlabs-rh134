@@ -22,8 +22,8 @@
             {# Solo entramos aquí si hay al menos 5 columnas #}
             {% set id_val = parts[0] | int %}
             {% set key_val = parts[1] %}
-            {% set status_val = parts[2] | upper %}
-            {% set detail_val = parts[3] %}
+            {% set detail_val = parts[2] %}
+            {% set status_val = parts[3] | upper %}
             {% set weight_val = parts[4] | int %}
             
             {% set display_name = (key_val | capitalize) if key_val != 'checked' else "Command: " ~ detail_val %}
@@ -31,8 +31,8 @@
             {% set _ = ns.items.append({
               'id': id_val,
               'name': display_name,
-              'status': status_val,
               'detail': detail_val,
+              'status': status_val,
               'weight': weight_val
             }) %}
           {% endif %}
