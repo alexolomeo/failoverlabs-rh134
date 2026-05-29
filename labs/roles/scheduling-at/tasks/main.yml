@@ -38,6 +38,10 @@
 - name: "Grade lab"
   block:
     - include_tasks: simulate.yml
+      when: failover_remote_environment == "servera"
+
+    - include_tasks: report.yml
+      when: failover_remote_environment == "servera"
 
   when: 
     - failover_mode == "grade"  

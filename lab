@@ -31,6 +31,28 @@ check_play_lab() {
     echo "Iniciando simulación..."
 }
 
+FLAG_GRADE="/usr/local/.labs/$LAB_NAME/active-grade"
+
+# Función para validar un solo intento
+check_play_lab_grade() {
+
+    if [ -f "$FLAG_GRADE" ]; then
+        echo "No puedes volver a evaluar el examen, verifica tu resultado en - http://workstation/simulator/$LAB_NAME"
+        exit 1
+    fi
+
+    if [ -f "$FLAG_PATH" ]; then
+        echo "Tienes inicializado en modo simulacion"
+        echo "Para activar en modo calificacion activa estos pasos:"
+        echo "ACTIVA   ->  lab start $LAB_NAME"
+        echo "CALIFICA ->  lab grade $LAB_NAME"
+        echo "FINALIZA ->  lab finish $LAB_NAME"
+        exit 1
+    fi
+
+    echo "Iniciando calificacion..."
+}
+
 # Función para validar el tiempo de expiracion
 check_expire_lab() {
 
@@ -120,9 +142,14 @@ case "$ACTION" in
         ;;
     grade)
         log_action "grade" "$LAB_NAME"
+	check_play_lab_grade
         if [[ -x "$LAB_PATH/grade.sh" ]]; then
             echo "Evaluando laboratorio: $LAB_NAME"
-            "$LAB_PATH/grade.sh"
+            "$LAB_PATH/grade.sh" $LAB_NAME
+	    echo " "
+	    printf "%-5s Reporte Evaluacion de  $LAB_NAME....\n"
+	    printf "%-5s - http://workstation/simulator/$LAB_NAME/ \n"
+	    echo " "
         else
             echo "No hay script de evaluación (grade.sh)"
         fi

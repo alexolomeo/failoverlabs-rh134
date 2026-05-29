@@ -2,7 +2,7 @@
 
 - name: GENERATOR REPORT - Leer el archivo de log
   slurp:
-    src: "{{ failover_remote_validator_temp }}/simulate.log"
+    src: "{{ failover_remote_validator_temp }}/grade.log"
   register: remote_file
 
 - name: Limpiar variable eval_items para evitar persistencia
