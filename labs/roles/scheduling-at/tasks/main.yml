@@ -27,14 +27,6 @@
     - failover_mode == "simulate"  
     - failover_remote_environment == "servera"  
 
-- name: "Report lab"
-  block:
-    - include_tasks: report.yml
-
-  when: 
-    - failover_mode == "report"  
-    - failover_remote_environment == "servera"  
-
 - name: "Grade lab"
   block:
     - include_tasks: simulate.yml
