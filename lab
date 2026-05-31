@@ -5,6 +5,15 @@ LABS_DIR="$MAINPATH/labs"
 
 #LABS_DIR="$(dirname "$0")/labs"
 
+CONFIG_FILE="/etc/lab-rh134/config"
+
+if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
+else
+    echo "Error: El archivo de configuración no existe en $CONFIG_FILE" >&2
+    exit 1
+fi
+
 ACTION="$1"
 LAB_NAME="$2"
 LAB_PATH="$LABS_DIR/$LAB_NAME"
@@ -122,8 +131,11 @@ case "$ACTION" in
         ;;
     simulate)
         log_action "simulate" "$LAB_NAME"
-	check_play_lab
-	check_expire_lab
+	if [ "$simulate_strict" = "enable" ]; then
+		check_play_lab
+		check_expire_lab
+        fi
+
         if [[ -x "$LAB_PATH/simulate.sh" ]]; then
             echo "Simulador ...Evaluando laboratorio: $LAB_NAME"
             "$LAB_PATH/simulate.sh" $LAB_NAME
@@ -133,7 +145,9 @@ case "$ACTION" in
         ;;
     grade)
         log_action "grade" "$LAB_NAME"
-	check_play_lab_grade
+	if [ "$grade_mode_strict_evaluation" = "enable" ]; then
+		check_play_lab_grade
+	fi
         if [[ -x "$LAB_PATH/grade.sh" ]]; then
             echo "Evaluando laboratorio: $LAB_NAME"
             "$LAB_PATH/grade.sh" $LAB_NAME
