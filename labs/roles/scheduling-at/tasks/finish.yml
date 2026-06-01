@@ -1,0 +1,146 @@
+---
+
+- name: "FINISH LAB - Eliminar archivo de history del bash  {{ ansible_env.HOME }}/.bash_history, using shell: {{ ansible_env.SHELL }} "
+  become: yes
+  ansible.builtin.file:
+    path: "root/.bash_history"
+    state: absent  
+  ignore_errors: yes
+
+- name: FINISH LAB - Limpiar el historial de bash
+  become: yes
+  ansible.builtin.shell: "history -c "
+  ignore_errors: yes
+
+- name: FINISH LAB - Extraer la hora de inicio del archivo de log
+  ansible.builtin.shell: |
+    grep "Inicia el laboratorio" {{ failover_remote_rsyslog }} | tail -n 1 | awk -F'=' '{print $2}' | tr -d '")'
+  register: raw_start_time
+  changed_when: false
+
+- name: FINISH LAB - Setear varriable de fecha para cargar al --since del journalctl
+  set_fact:
+    journal_start_time: "{{ raw_start_time.stdout }}"
+
+- name: "FINISH LAB - Debug logs de journal_start_time {{ raw_start_time.stdout }}"
+  ansible.builtin.debug:
+    var: journal_start_time
+
+- name: FINISH LAB - Exportar logs detallados del sistema y servicios (systemd journal)
+  ansible.builtin.shell: >
+    journalctl 
+    --since="{{ journal_start_time }}" 
+    --output=short-iso 
+    > "{{ failover_remote_validator_audit }}/journal.log"
+  changed_when: true
+
+- name: FINISH LAB - Exportar logs específicos de Auditoría (Auditd / Security)
+  ansible.builtin.shell: >
+    journalctl 
+    --since="{{ journal_start_time }}" _TRANSPORT=audit 
+    > "{{ failover_remote_validator_audit }}/audit_security.log"
+  changed_when: true
+  failed_when: false # Por si auditd no está activo, que no rompa el playbook
+
+- name: FINISH LAB - Exportar logs de Kernel, Boot y Alertas Críticas (Panic/Alert)
+  ansible.builtin.shell: >
+    journalctl -k
+    --since="{{ journal_start_time }}"
+    > "{{ failover_remote_validator_audit }}/kernel_boot.log"
+  changed_when: true
+
+- name: FINISH LAB - Export critical logs
+  shell: >
+    journalctl
+    --since "{{ journal_start_time }}"
+    -p warning
+    > "{{ failover_remote_validator_audit }}/warnings.log"
+  changed_when: true
+
+- name: FINISH LAB - Export audit records
+  shell: >
+    ausearch
+    -ts "{{ journal_start_time }}"
+    > "{{ failover_remote_validator_audit }}/audit-selinux.log"
+  ignore_errors: true
+
+- name: FINISH LAB - Security related journal
+  shell: >
+    journalctl
+    SYSLOG_FACILITY=4
+    --since "{{ journal_start_time }}"
+    > "{{ failover_remote_validator_audit }}/security.log"
+  changed_when: true
+
+- name: FINISH LAB - Boot events
+  shell: >
+    journalctl -b
+    --since "{{ journal_start_time }}"
+    > "{{ failover_remote_validator_audit }}/boot.log"
+  changed_when: true
+
+- name: FINISH LAB - Failed services
+  shell: >
+    systemctl --failed
+    > "{{ failover_remote_validator_audit }}/failed-services.log"
+  changed_when: true
+
+- name: FINISH LAB - Firewalld events
+  shell: >
+    journalctl -u firewalld
+    --since "{{ journal_start_time }}"
+    > "{{ failover_remote_validator_audit }}/firewalld.log"
+  changed_when: true
+
+- name: FINISH LAB - SSH activity
+  shell: >
+    journalctl -u sshd
+    --since "{{ journal_start_time }}"
+    > "{{ failover_remote_validator_audit }}/sshd.log"
+  changed_when: true
+
+- name: FINISH LAB - NFS activity
+  shell: >
+    journalctl
+    -u nfs-server
+    --since "{{ journal_start_time }}"
+    > "{{ failover_remote_validator_audit }}/nfs.log"
+  ignore_errors: true
+  changed_when: true
+
+- name: FINISH LAB - Export journal JSON
+  shell: >
+    journalctl
+    --since "{{ journal_start_time }}"
+    -o json
+    > "{{ failover_remote_validator_audit }}/journal-source.json"
+  changed_when: true
+
+- name: FINISH LAB - Create tarball
+  community.general.archive:
+    path: "{{ failover_remote_validator_audit }}/*"
+    dest: "{{ failover_remote_validator_temp }}/auditlog.tar.gz"
+    format: gz
+
+- name: FINISH LAB - Descargar el archivo comprimido a la Workstation
+  ansible.builtin.fetch:
+    src: "{{ failover_remote_validator_temp }}/auditlog.tar.gz"
+    dest: "{{ failover_remote_validator_temp }}"
+    flat: yes # Evita que Ansible replique la estructura de carpetas de origen
+
+- name: "FINISH LAB - Obtener ID de secuencia desde workstation"
+  delegate_to: workstation
+  ansible.builtin.command: cat "{{ failover_remote_workspace }}/{{ failover_remote_project }}/sequence/sequence.ini"
+  register: lab_sequence_id
+  changed_when: false
+
+- name: "FINISH LAB - Establecer ID de laboratorio como fact"
+  set_fact:
+    lab_id: "{{ lab_sequence_id.stdout | trim }}"
+
+- name: FINISH LAB - Extract archive locally
+  delegate_to: workstation
+  unarchive:
+    src: "{{ failover_remote_validator_temp }}/auditlog.tar.gz"
+    dest: "{{ failover_remote_workdir_simulate }}/{{ lab_id }}/"
+    remote_src: false

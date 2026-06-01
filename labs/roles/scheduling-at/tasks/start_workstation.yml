@@ -109,10 +109,10 @@
         mode: 0775
         force: yes
 
-    - name: "START CONFIG LAB - Ensure app workdir exists: {{ failover_workdir_simulate_eval }}/{{ failover_number }}"
+    - name: "START CONFIG LAB - Ensure app workdir exists: {{ failover_workdir_exam }}"
       become: yes
       ansible.builtin.file:
-        path: "{{ failover_workdir_simulate_eval }}/{{ failover_number }}"
+        path: "{{ failover_workdir_exam }}"
         state: directory
         mode: 0775
         force: yes

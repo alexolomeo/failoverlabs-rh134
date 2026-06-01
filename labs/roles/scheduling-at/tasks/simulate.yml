@@ -173,7 +173,7 @@
   delegate_to: workstation
   become: yes
   ansible.builtin.copy:
-    src: "/tmp/{{ failover_remote_project }}"
+    src: "/tmp/{{ failover_remote_project }}/*"
     dest: "{{ failover_remote_workdir_simulate }}/{{ lab_id }}/"
     remote_src: yes
     mode: '0755'
@@ -183,7 +183,7 @@
   delegate_to: workstation
   become: yes
   ansible.builtin.copy:
-    src: "/tmp/{{ failover_remote_project }}"
+    src: "/tmp/{{ failover_remote_project }}/*"
     dest: "{{ failover_remote_workdir_exam }}/{{ lab_id }}/"
     remote_src: yes
     mode: '0755'

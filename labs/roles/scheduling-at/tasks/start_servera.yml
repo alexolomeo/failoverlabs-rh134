@@ -53,10 +53,18 @@
         mode: 0775
         force: yes
 
+    - name: "START CONFIG LAB - Create directory validator: {{ failover_remote_validator_audit }} temporal"
+      become: yes
+      ansible.builtin.file:
+        path: "{{ failover_remote_validator_audit }}"
+        state: directory
+        mode: 0775
+        force: yes
+
     - name: "START CONFIG LAB - Ensure app workdir exists: {{ failover_remote_workdir_simulate }}/{{ failover_number }}"
       become: yes
       ansible.builtin.file:
-        path: "{{ failover_remote_workdir_simulate }}/{{ failover_number }}"
+        path: "{{ failover_remote_workdir_simulate }}"
         state: directory
         mode: 0775
         force: yes
@@ -64,7 +72,7 @@
     - name: "START CONFIG LAB - Ensure app workdir exists: {{ failover_remote_workdir_exam }}/{{ failover_number }}"
       become: yes
       ansible.builtin.file:
-        path: "{{ failover_remote_workdir_exam }}/{{ failover_number }}"
+        path: "{{ failover_remote_workdir_exam }}"
         state: directory
         mode: 0775
         force: yes

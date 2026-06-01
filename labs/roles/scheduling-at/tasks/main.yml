@@ -42,7 +42,11 @@
 
 - name: "Finish lab"
   block:
+    - include_tasks: finish.yml
+      when: failover_remote_environment == "servera"
+
     - include_tasks: finish_validate.yml
+      when: failover_remote_environment == "servera"
 
   when: 
     - failover_mode == "finish"  
