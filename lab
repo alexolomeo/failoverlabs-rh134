@@ -45,11 +45,6 @@ FLAG_GRADE="/usr/local/.labs/$LAB_NAME/active-grade"
 # Función para validar un solo intento
 check_play_lab_grade() {
 
-    if [ -f "$FLAG_GRADE" ]; then
-        echo "No puedes volver a evaluar el examen, verifica tu resultado en - http://workstation/simulator/$LAB_NAME"
-        exit 1
-    fi
-
     if [ -f "$FLAG_PATH" ]; then
         echo ""
         echo "Tienes inicializado en modo simulacion"
@@ -59,6 +54,11 @@ check_play_lab_grade() {
         echo "CALIFICA ->  lab grade $LAB_NAME"
         echo "FINALIZA ->  lab finish $LAB_NAME"
         echo "-------------------------------------------------------------"
+        exit 1
+    fi
+
+    if [ -f "$FLAG_GRADE" ]; then
+        echo "No puedes volver a evaluar el examen, verifica tu resultado en - http://workstation/simulator/$LAB_NAME"
         exit 1
     fi
 
