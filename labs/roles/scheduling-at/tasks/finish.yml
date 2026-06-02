@@ -12,6 +12,79 @@
   ansible.builtin.shell: "history -c "
   ignore_errors: yes
 
+    - name: Crear cabecera del reporte
+      copy:
+        dest: "{{ reporte_file }}"
+        content: |
+          =====================================
+          Radiografía del servidor: {{ ansible_hostname }}
+          Fecha: {{ ansible_date_time.date }} {{ ansible_date_time.time }}
+          =====================================
+
+    - name: Información del sistema operativo
+      lineinfile:
+        path: "{{ reporte_file }}"
+        line: "SO: {{ ansible_distribution }} {{ ansible_distribution_version }} {{ ansible_distribution_release }} ({{ ansible_architecture }})"
+        insertafter: EOF
+
+    - name: Información de kernel y CPU
+      lineinfile:
+        path: "{{ reporte_file }}"
+        line: "Kernel: {{ ansible_kernel }} | CPU: {{ ansible_processor[0] }} | vCPUs: {{ ansible_processor_vcpus }}"
+        insertafter: EOF
+
+    - name: Memoria RAM
+      lineinfile:
+        path: "{{ reporte_file }}"
+        line: "RAM Total: {{ ansible_memtotal_mb }} MB | RAM Libre: {{ ansible_memfree_mb }} MB"
+        insertafter: EOF
+
+    - name: IP y interfaces de red
+      lineinfile:
+        path: "{{ reporte_file }}"
+        line: "IP Principal: {{ ansible_default_ipv4.address }} | Interfaces: {{ ansible_interfaces | join(', ') }}"
+        insertafter: EOF
+
+    - name: Espacio en disco
+      shell: df -h
+      register: discos
+
+    - name: Guardar disco en reporte
+      lineinfile:
+        path: "{{ reporte_file }}"
+        line: "{{ item }}"
+        insertafter: EOF
+      loop: "{{ discos.stdout_lines }}"
+    
+    - name: Puertos en escucha
+      shell: ss -tulpn
+      register: puertos
+
+    - name: Guardar puertos en reporte
+      lineinfile:
+        path: "{{ reporte_file }}"
+        line: "{{ item }}"
+        insertafter: EOF
+      loop: "{{ puertos.stdout_lines }}"
+
+    - name: Procesos top 20 por uso de memoria
+      shell: ps aux --sort=-%mem | head -20
+      register: procesos
+
+    - name: Guardar procesos en reporte
+      lineinfile:
+        path: "{{ reporte_file }}"
+        line: "{{ item }}"
+        insertafter: EOF
+      loop: "{{ procesos.stdout_lines }}"
+
+    - name: Mensaje final
+      lineinfile:
+        path: "{{ reporte_file }}"
+        line: "====================================="
+        insertafter: EOF
+
+
 - name: FINISH LAB - Extraer la hora de inicio del archivo de log
   ansible.builtin.shell: |
     grep "Inicia el laboratorio" {{ failover_remote_rsyslog }} | tail -n 1 | awk -F'=' '{print $2}' | tr -d '")'
