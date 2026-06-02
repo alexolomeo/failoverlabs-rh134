@@ -1,0 +1,9 @@
+# Lab setup to expirate proccess to evaluate
+# This value is in minutes
+expiration_simulate=10
+#Disable and enable simulator iteration, allow tu execute many time
+#without active lab start project 
+simulate_strict=enable
+#Disable and Enable Grade mode strict, allow  to try only one chance and may be 
+##generate the review about the lab practive.cc
+grade_mode_strict_evaluation=enable
