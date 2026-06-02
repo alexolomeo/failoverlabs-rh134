@@ -10,6 +10,7 @@ printf "%-5s Checking Workstation.....................................success\n"
 printf "%-5s Checking dependency collection...........................success\n"
 
 ansible-galaxy collection install ansible.posix
+ansible-galaxy collection install community.general
 
 sleep 2
 printf "%-5s Checking servera.........................................success\n"

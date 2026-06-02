@@ -45,7 +45,8 @@ LAB_NAME=$1
 
 rm -rf /tmp/$LAB_NAME.log
 
-ansible-playbook -i /usr/local/rh134/labs/server.lab  /usr/local/rh134/labs/$LAB_NAME.yml -e "failover_mode='finish'" >  /tmp/$LAB_NAME.log  2>&1
+ansible-playbook -i /usr/local/rh134/labs/server.lab  /usr/local/rh134/labs/$LAB_NAME.yml -e "failover_mode='finish'" 
+#>  /tmp/$LAB_NAME.log  2>&1
 
 echo "Finishing lab."
 echo ""

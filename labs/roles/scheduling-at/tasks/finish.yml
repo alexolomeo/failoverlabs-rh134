@@ -57,13 +57,6 @@
     > "{{ failover_remote_validator_audit }}/warnings.log"
   changed_when: true
 
-- name: FINISH LAB - Export audit records
-  shell: >
-    ausearch
-    -ts "{{ journal_start_time }}"
-    > "{{ failover_remote_validator_audit }}/audit-selinux.log"
-  ignore_errors: true
-
 - name: FINISH LAB - Security related journal
   shell: >
     journalctl
@@ -125,7 +118,7 @@
 - name: FINISH LAB - Descargar el archivo comprimido a la Workstation
   ansible.builtin.fetch:
     src: "{{ failover_remote_validator_temp }}/auditlog.tar.gz"
-    dest: "{{ failover_remote_validator_temp }}"
+    dest: "{{ failover_remote_validator_temp }}/auditlog.tar.gz"
     flat: yes # Evita que Ansible replique la estructura de carpetas de origen
 
 - name: "FINISH LAB - Obtener ID de secuencia desde workstation"
