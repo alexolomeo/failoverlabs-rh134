@@ -171,16 +171,24 @@
 
 - name: "SIMULATE LAB - Sincronizar resultados simulate a la ruta final en workstation history simulate"
   delegate_to: workstation
-  ansible.builtin.shell: >
-    cp "{{ failover_remote_validator_temp }}/*" "{{ failover_remote_workdir_simulate }}/{{ lab_id }}/"
+  ansible.builtin.command:
+    argv:
+      - cp
+      - -a
+      - "{{ failover_remote_validator_temp }}/."
+      - "{{ failover_remote_workdir_simulate }}/{{ lab_id }}/"
   changed_when: true
   when: failover_mode == 'simulate'
 
 - name: "SIMULATE LAB - Sincronizar resultados grade a la ruta final en workstation history exam"
   delegate_to: workstation
-  ansible.builtin.shell: >
-    cp "{{ failover_remote_validator_temp }}/*" "{{ failover_remote_workdir_exam }}/{{ lab_id }}/"
-  changed_when: true
+  ansible.builtin.command:
+    argv:
+      - cp
+      - -a
+      - "{{ failover_remote_validator_temp }}/."
+      - "{{ failover_remote_workdir_exam }}/{{ lab_id }}/"
+  changed_when: true   
   when: failover_mode == 'grade'
 
 

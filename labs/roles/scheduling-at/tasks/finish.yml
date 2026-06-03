@@ -12,81 +12,80 @@
   ansible.builtin.shell: "history -c "
   ignore_errors: yes
 
-- name: Gather facts
-  ansible.builtin.setup:
-
-- name: FINISH LAB - Crear cabecera del reporte
-  copy:
-    dest: "{{ failover_remote_os_report }}"
-    content: |
-      =====================================
-      Radiografía del servidor: {{ failover_remote_environment }}
-      =====================================
-
 - name: FINISH LAB - Información del sistema operativo
-  lineinfile:
-    path: "{{ failover_remote_os_report }}"
-    line: "SO: {{ ansible_distribution }} {{ ansible_distribution_version }} {{ ansible_distribution_release }} ({{ ansible_architecture }})"
-    insertafter: EOF
+  ansible.builtin.shell: hostnamectl; uname -a; cat /etc/os-release; uptime; date; timedatectl  
+  register: system_info
 
 - name: FINISH LAB - Información de kernel y CPU
-  lineinfile:
-    path: "{{ failover_remote_os_report }}"
-    line: "Kernel: {{ ansible_kernel }} | CPU: {{ ansible_processor[0] }} | vCPUs: {{ ansible_processor_vcpus }}"
-    insertafter: EOF
+  ansible.builtin.shell: lscpu; nproc; top -bn1 | head -20
+  register: cpu_info
 
 - name: FINISH LAB - Memoria RAM
-  lineinfile:
-    path: "{{ failover_remote_os_report }}"
-    line: "RAM Total: {{ ansible_memtotal_mb }} MB | RAM Libre: {{ ansible_memfree_mb }} MB"
-    insertafter: EOF
+  ansible.builtin.shell: free -h; cat /proc/meminfo; vmstat 1 5
+  register: ram_info
 
 - name: FINISH LAB - IP y interfaces de red
-  lineinfile:
-    path: "{{ failover_remote_os_report }}"
-    line: "IP Principal: {{ ansible_default_ipv4.address }} | Interfaces: {{ ansible_interfaces | join(', ') }}"
-    insertafter: EOF
+  ansible.builtin.shell: ip addr show; ip route; cat /etc/resolv.conf
+  register: network_info
 
 - name: FINISH LAB - Espacio en disco
-  shell: df -h
+  ansible.builtin.shell: df -hi ; lsblk ; blkid ; mount 
   register: discos
 
-- name: FINISH LAB - Guardar disco en reporte
-  lineinfile:
-    path: "{{ failover_remote_os_report }}"
-    line: "{{ item }}"
-    insertafter: EOF
-  loop: "{{ discos.stdout_lines }}"
-    
-- name: FINISH LAB - Puertos en escucha
-  shell: ss -tulpn
-  register: puertos
+- name: FINISH LAB - LVM PS
+  ansible.builtin.shell: pvs ; pvdisplay  
+  register: lvm_ps
 
-- name: FINISH LAB - Guardar puertos en reporte
-  lineinfile:
-    path: "{{ failover_remote_os_report }}"
-    line: "{{ item }}"
-    insertafter: EOF
-  loop: "{{ puertos.stdout_lines }}"
+- name: FINISH LAB - LVM VG
+  ansible.builtin.shell: vgs ; vgdisplay
+  register: lvm_vg
+
+- name: FINISH LAB - LVM LV
+  ansible.builtin.shell: lvs ; lvdisplay
+  register: lvm_lv
+
+- name: FINISH LAB - Storage Stratis details
+  ansible.builtin.shell: stratis pool list; stratis filesystem list; stratis blockdev list 
+  register: stratis_info
+
+- name: FINISH LAB - Puertos en escucha
+  ansible.builtin.shell: ss -tulpn; ss -ant
+  register: port_info
 
 - name: FINISH LAB - Procesos top 20 por uso de memoria
-  shell: ps aux --sort=-%mem | head -20
-  register: procesos
+  ansible.builtin.shell: ps aux --sort=-%mem | head -20; ps aux --sort=-%cpu | head -20
+  register: process_info
 
-- name: FINISH LAB - Guardar procesos en reporte
-  lineinfile:
-    path: "{{ failover_remote_os_report }}"
-    line: "{{ item }}"
-    insertafter: EOF
-  loop: "{{ procesos.stdout_lines }}"
+- name: FINISH LAB - Servicios y systemd
+  ansible.builtin.shell: systemctl list-units --type=service --state=running; systemctl --failed
+  register: services_info
 
-- name: FINISH LAB - Mensaje final
-  lineinfile:
-    path: "{{ failover_remote_os_report }}"
-    line: "====================================="
-    insertafter: EOF
+- name: FINISH LAB - SELinux details
+  ansible.builtin.shell: getenforce; sestatus -v; getsebool -a; semodule -l;  ps -eZ 
+  register: selinux_info
 
-- name: "FINISH LAB - Leer contenido del history.log en servera"
+- name: FINISH LAB - Firewall details
+  ansible.builtin.shell: firewall-cmd --get-active-zones ;firewall-cmd --list-all-zones
+  register: firewall_info
+
+- name: FINISH LAB - Hardware details
+  ansible.builtin.shell: dmidecode -t system ; dmidecode -t memory
+  register: hardware_info
+
+- name: FINISH LAB - Swap details
+  ansible.builtin.shell: swapon -s
+  register: swap_info
+
+- name: FINISH LAB - Fstab details
+  ansible.builtin.shell: cat /etc/fstab
+  register: fstab_info
+
+- name: Generar os_reporte desde plantilla J2
+  template:
+    src: templates/os_report_template.j2
+    dest: "{{ failover_remote_os_report }}"
+
+- name: "FINISH LAB - Leer contenido del os_report.log en servera"
   ansible.builtin.slurp:
     src: "{{ failover_remote_os_report }}"
   register: os_report_log
@@ -218,14 +217,22 @@
     lab_id: "{{ lab_sequence_id.stdout | trim }}"
 
 - name: FINISH LAB - Copy All temporal files to historial simulate on servera
-  shell: >
-    cp "{{ failover_remote_validator_temp }}/*" "{{ failover_remote_workdir_simulate }}/{{ lab_id }}/"
+  ansible.builtin.command:
+    argv:
+      - cp
+      - -a
+      - "{{ failover_remote_validator_temp }}/."
+      - "{{ failover_remote_workdir_simulate }}/{{ lab_id }}/"
   changed_when: true
 
 - name: FINISH LAB - Copy All temporal files to historial simulate on workstation
   delegate_to: workstation
-  shell: >
-    cp "{{ failover_remote_validator_temp }}/*" "{{ failover_remote_workdir_simulate }}/{{ lab_id }}/"
+  ansible.builtin.command:
+    argv:
+      - cp
+      - -a
+      - "{{ failover_remote_validator_temp }}/."
+      - "{{ failover_remote_workdir_simulate }}/{{ lab_id }}/"
   changed_when: true
 
 - name: FINISH LAB - Extract archive locally
