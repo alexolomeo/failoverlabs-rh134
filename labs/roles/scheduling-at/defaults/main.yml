@@ -5,6 +5,7 @@ failover_environment: null                         # workstation, servera server
 failover_user: student
 failover_group: student
 failover_config: /etc/lab-rh134
+failover_config_file: /etc/lab-rh134/config
 failover_config_home: ~/lab-rh134
 failover_workspace: '/usr/local/.labs'
 failover_project:                                         # lab <failover_mode> <failover_project> 

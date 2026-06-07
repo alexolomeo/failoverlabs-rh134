@@ -27,6 +27,57 @@
   ansible.builtin.shell:
     cmd: "history -a && history -n"
 
+- name: SIMULATE LAB - Leer archivo de configuración desde workstation
+  become: yes
+  delegate_to: workstation
+  ansible.builtin.slurp:
+    src: "{{ failover_config_file }}"
+  register: config_file
+
+- name: SIMULATE LAB - Decodificar contenido del config
+  set_fact:
+    config_content: "{{ config_file.content | b64decode }}"
+
+- name: SIMULATE LAB - Obtener valor de simulate_strict from config workstation
+  set_fact:
+    simulate_strict: "{{ (config_content | regex_search('^simulate_strict=(.*)$', '\\1', multiline=True) | first) | default('', true) }}"
+
+- name: SIMULATE LAB - Obtener valor de grade_mode_strict_evaluation from config workstation
+  set_fact:
+    grade_strict: "{{ (config_content | regex_search('^grade_mode_strict_evaluation=(.*)$', '\\1', multiline=True) | first) | default('', true) }}"
+
+- name: SIMULATE LAB - Verificar si el archivo active-simulate existe
+  become: yes
+  delegate_to: workstation
+  ansible.builtin.stat:
+    path: "{{ failover_remote_validator_temp }}/active-simulate"
+  register: active_simulate_file
+
+- name: SIMULATE LAB - Verificar si el archivo grade-simulate existe
+  become: yes
+  delegate_to: workstation
+  ansible.builtin.stat:
+    path: "{{ failover_remote_workspace }}/{{ failover_remote_project }}/active-grade"
+  register: active_grade_file
+
+- name: SIMULATE LAB - Eliminar simulate.log si se cumplen las condiciones
+  ansible.builtin.file:
+    path: "{{ failover_remote_validator_temp }}/simulate.log"
+    state: absent
+  when:
+    - simulate_strict == "disable"
+    - active_simulate_file.stat.exists
+  ignore_errors: yes
+
+- name: SIMULATE LAB - Eliminar grade.log si se cumplen las condiciones
+  ansible.builtin.file:
+    path: "{{ failover_remote_validator_temp }}/grade.log"
+    state: absent
+  when:
+    - grade_strict == "disable"
+    - active_grade_file.stat.exists
+  ignore_errors: yes
+
 - name: SIMULATE LAB - Establecer flag en Workstation si el lab simulate está activo
   delegate_to: workstation
   ansible.builtin.file:

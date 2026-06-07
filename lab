@@ -141,6 +141,9 @@ case "$ACTION" in
 		check_play_lab
 		check_expire_lab
         fi
+	if [ "$simulate_strict" = "disable" ] && [ -f "$FLAG_PATH" ]; then
+		sudo rm -rf /tmp/$LAB_NAME/grade.log
+	fi
 
         if [[ -x "$LAB_PATH/simulate.sh" ]]; then
             echo "Simulador ...Evaluando laboratorio: $LAB_NAME"
@@ -153,6 +156,9 @@ case "$ACTION" in
         log_action "grade" "$LAB_NAME"
 	if [ "$grade_mode_strict_evaluation" = "enable" ]; then
 		check_play_lab_grade
+	fi
+	if [ "$grade_mode_strict_evaluation" = "disable" ] && [ -f "$FLAG_GRADE" ]; then
+		sudo rm -rf /tmp/$LAB_NAME/grade.log
 	fi
         if [[ -x "$LAB_PATH/grade.sh" ]]; then
             echo "Evaluando laboratorio: $LAB_NAME"
