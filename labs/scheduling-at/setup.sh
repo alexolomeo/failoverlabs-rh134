@@ -43,12 +43,35 @@ print_line() {
 
 LAB_NAME=$1
 
+LOG_LEVEL=$2
+
+if [[ ! "$LOG_LEVEL" =~ ^(none|info|basic|debug)$ ]]; then
+    echo "Error: LOG_LEVEL debe ser 'none', 'info', 'basic' o 'debug'."
+    exit 1
+fi
+
+
 if [ -f "/tmp/$LAB_NAME.log" ]; then
 	sudo rm -rf /tmp/$LAB_NAME.log
 fi
 
-sudo ansible-playbook -i /usr/local/rh134/labs/server.lab  /usr/local/rh134/labs/$LAB_NAME.yml -e "failover_mode='start'" >  /tmp/$LAB_NAME.log  2>&1
-#sudo ansible-playbook -i /usr/local/rh134/labs/server.lab  /usr/local/rh134/labs/$LAB_NAME.yml -e "failover_mode='start'" 
+# ==============================================================================
+# EJECUCIÓN DE ANSIBLE SEGÚN EL LOG_LEVEL
+# ==============================================================================
+case "$LOG_LEVEL" in
+    none|info)
+        # INFO AND NONE: Silencioso, todo redirigido al log
+        sudo ansible-playbook -i /usr/local/rh134/labs/server.lab /usr/local/rh134/labs/$LAB_NAME.yml -e "failover_mode='start'" > /tmp/$LAB_NAME.log 2>&1
+        ;;
+    basic)
+        # BASIC: Se muestra directamente en pantalla (sin redirigir a archivo)
+        sudo ansible-playbook -i /usr/local/rh134/labs/server.lab /usr/local/rh134/labs/$LAB_NAME.yml -e "failover_mode='start'"
+        ;;
+    debug)
+        # DEBUG: Modo muy verboso (-vvvv) en pantalla
+        sudo ansible-playbook -i /usr/local/rh134/labs/server.lab /usr/local/rh134/labs/$LAB_NAME.yml -e "failover_mode='start'" -vvvv
+        ;;
+esac
 
 echo "Starting lab."
 echo ""
@@ -66,7 +89,7 @@ print_line "· Ensuring /home/student/cookies.txt does not exist on servera" "SU
 echo ""
 
 
-if [ -f "/tmp/$LAB_NAME.log" ]; then
+if [ "$LOG_LEVEL" = "info" ] && [ -f "/tmp/$LAB_NAME.log" ]; then	
 	cat /tmp/$LAB_NAME.log | tail -3
 fi
 
