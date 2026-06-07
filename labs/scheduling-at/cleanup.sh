@@ -43,10 +43,11 @@ print_line() {
 
 LAB_NAME=$1
 
-rm -rf /tmp/$LAB_NAME.log
+if [ -f "/tmp/$LAB_NAME.log" ]; then
+	sudo rm -rf /tmp/$LAB_NAME.log
+fi
 
-ansible-playbook -i /usr/local/rh134/labs/server.lab  /usr/local/rh134/labs/$LAB_NAME.yml -e "failover_mode='finish'" 
-#>  /tmp/$LAB_NAME.log  2>&1
+sudo ansible-playbook -i /usr/local/rh134/labs/server.lab  /usr/local/rh134/labs/$LAB_NAME.yml -e "failover_mode='finish'"  >  /tmp/$LAB_NAME.log  2>&1
 
 echo "Finishing lab."
 echo ""
@@ -61,6 +62,8 @@ sleep 2
 print_line "· Removing /home/student/cookies.txt from servera" "SUCCESS"
 echo ""
 
-cat /tmp/$LAB_NAME.log | tail -3
+if [ -f "/tmp/$LAB_NAME.log" ]; then
+	cat /tmp/$LAB_NAME.log | tail -3
+fi
 
 

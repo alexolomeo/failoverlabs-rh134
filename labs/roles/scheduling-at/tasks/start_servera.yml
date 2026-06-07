@@ -8,6 +8,15 @@
         msg: "* La variable failover_number es: {{ failover_number }} "
       when: inventory_hostname in groups['servera']
 
+    - name: "START CONFIG LAB - Borrar historial de usuario student permanentemente"
+      become_user: student
+      ansible.builtin.shell: |
+        truncate -s 0 ~/.bash_history
+        history -c
+        history -w
+      args:
+        executable: /bin/bash
+       
     - name: "START CONFIG LAB - Borrar historial de root permanentemente"
       become: yes
       ansible.builtin.shell: |

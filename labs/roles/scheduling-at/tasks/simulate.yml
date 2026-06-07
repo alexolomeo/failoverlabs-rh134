@@ -1,7 +1,5 @@
 ---
 
-
-
 - name: SIMULATE LAB - Cerrar todas las sesiones SSH activas en servera, excepto la de Ansible
   become: yes
   ansible.builtin.shell: |
@@ -23,7 +21,6 @@
     fi
 
   ignore_errors: yes  # No interrumpir la ejecución si alguna sesión no se puede matar
-
 
 - name: SIMULATE LAB - Forzar la actualización del historial
   become: yes
@@ -59,10 +56,15 @@
     mode: 0644
   when: output_review_file is defined
 
+- name: SIMULATE LAB - Forzar la escritura del history en el file .bash_history
+  become_user: student
+  ansible.builtin.shell: 
+    cmd: history -a  # Fuerza la escritura de la sesión actual al archivo
+
 - name: SIMULATE LAB - Obtener historial de comandos
+  become_user: student
   ansible.builtin.shell: |
-    history -a  # Fuerza la escritura de la sesión actual al archivo
-    cat /root/.bash_history
+    cat /home/student/.bash_history
   register: history_output
 
 - name: SIMULATE LAB - Escribir historial en archivo log

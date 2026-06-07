@@ -2,7 +2,9 @@
 
 LAB_NAME=$1
 
-rm -rf /tmp/$LAB_NAME.log
+if [ -f "/tmp/$LAB_NAME.log" ]; then
+	sudo rm -rf /tmp/$LAB_NAME.log
+fi
 
 sleep 2
 printf "%-5s Checking Workstation.....................................success\n"
@@ -19,10 +21,12 @@ sleep 2
 printf "%-5s Checking serverb.........................................success\n"
 
 
-ansible-playbook -i /usr/local/rh134/labs/server.lab  /usr/local/rh134/labs/$LAB_NAME.yml -e "failover_mode='configure'"  >  /tmp/$LAB_NAME.log  2>&1
+sudo ansible-playbook -i /usr/local/rh134/labs/server.lab  /usr/local/rh134/labs/$LAB_NAME.yml -e "failover_mode='configure'"  >  /tmp/$LAB_NAME.log  2>&1
 
 sleep 2
 printf "%-5s Activate Rsync............................................success\n"
 printf "....................................................................................................\n"
 
-cat /tmp/$LAB_NAME.log | tail -4
+if [ -f "/tmp/$LAB_NAME.log" ]; then
+	cat /tmp/$LAB_NAME.log | tail -4
+fi

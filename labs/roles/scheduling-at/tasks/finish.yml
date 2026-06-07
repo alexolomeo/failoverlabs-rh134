@@ -1,14 +1,28 @@
 ---
 
-- name: "FINISH LAB - Eliminar archivo de history del bash  {{ ansible_env.HOME }}/.bash_history, using shell: {{ ansible_env.SHELL }} "
+- name: "FINISH LAB - Eliminar archivo de history del bash  {{ ansible_env.HOME }}/.bash_history, del usuario root"
   become: yes
   ansible.builtin.file:
-    path: "root/.bash_history"
+    path: "/root/.bash_history"
+    state: absent  
+  ignore_errors: yes
+
+- name: "FINISH LAB - Eliminar archivo de history del bash  {{ ansible_env.HOME }}/.bash_history, del usuario student"
+  become: yes
+  become_user: student
+  ansible.builtin.file:
+    path: "/home/student/.bash_history"
     state: absent  
   ignore_errors: yes
 
 - name: FINISH LAB - Limpiar el historial de bash
   become: yes
+  ansible.builtin.shell: "history -c "
+  ignore_errors: yes
+
+- name: FINISH LAB - Limpiar el historial de bash del usuario student
+  become: yes
+  become_user: student
   ansible.builtin.shell: "history -c "
   ignore_errors: yes
 
@@ -199,6 +213,7 @@
     path: "{{ failover_remote_validator_audit }}/*"
     dest: "{{ failover_remote_validator_temp }}/auditlog.tar.gz"
     format: gz
+    mode: 0777
 
 - name: FINISH LAB - Descargar el archivo comprimido a la Workstation
   ansible.builtin.fetch:
@@ -242,3 +257,42 @@
     dest: "{{ failover_remote_workdir_simulate }}/{{ lab_id }}/"
     remote_src: false
 
+- name: FINISH LAB - Obtener directorios vacíos simulate
+  become: yes
+  delegate_to: workstation
+  ansible.builtin.command: >
+    find {{ failover_remote_workdir_simulate }}
+    -mindepth 1
+    -maxdepth 1
+    -type d
+    -empty
+  register: empty_dirs_simulate
+  changed_when: false
+
+- name: FINISH LAB - Eliminar directorios vacíos simulate
+  become: yes
+  delegate_to: workstation
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ empty_dirs_simulate.stdout_lines }}"
+
+- name: FINISH LAB - Obtener directorios vacíos exam
+  become: yes
+  delegate_to: workstation
+  ansible.builtin.command: >
+    find {{ failover_remote_workdir_exam }}
+    -mindepth 1
+    -maxdepth 1
+    -type d
+    -empty
+  register: empty_dirs_exam
+  changed_when: false
+
+- name: FINISH LAB - Eliminar directorios vacíos exam
+  become: yes
+  delegate_to: workstation
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ empty_dirs_exam.stdout_lines }}"

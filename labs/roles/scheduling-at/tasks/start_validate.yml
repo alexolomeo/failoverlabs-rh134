@@ -1,27 +1,93 @@
 ---
 
-- name: "START VALIDDATE LAB - Eliminar archivo de history del bash  {{ ansible_env.HOME }}/.bash_history, using shell: {{ ansible_env.SHELL }} "
+- name: START VALIDATE LAB - Cerrar todas las sesiones SSH activas en servera, excepto la de Ansible
   become: yes
+  ansible.builtin.shell: |
+    # Obtener la lista de procesos sshd relacionados con root y student
+    sessions=$(ps -eo pid,cmd | grep 'sshd' | grep -v 'grep' | grep -vE '(root|student)@pts/\d+' | grep pts | awk '{print $1}')
+    # Contar cuántas líneas hay en la salida
+    num_sessions=$(echo "$sessions" | wc -l)
+    # Si hay solo un proceso, no hacer nada
+    if [ "$num_sessions" -eq 1 ]; then
+      echo "Solo hay una sesión SSH activa. No se mata ningún proceso."
+    else
+      # Si hay más de uno, matar todos menos el último
+      # Iterar sobre las líneas de salida excepto la última
+      for pid in $(echo "$sessions" | head -n -1); do
+        # Matar las sesiones SSH activas (de otros usuarios)
+        kill -9 $pid 2>/dev/null || true
+        logger -p local7.info -t "LAB-RH134" "simulate validate {{ failover_remote_project }}  process SSH kill : $pid  "
+      done
+    fi
+
+  ignore_errors: yes  # No interrumpir la ejecución si alguna sesión no se puede matar
+
+
+- name: START VALIDATE LAB - Forzar la actualización del historial
+  become: yes
+  ansible.builtin.shell:
+    cmd: "history -a && history -n"
+
+- name: "START VALIDDATE LAB - Eliminar archivo de history del bash  {{ ansible_env.HOME }}/.bash_history, usuario student "
+  become_user: student
   ansible.builtin.file:
-    path: "root/.bash_history"
+    path: "/home/student/.bash_history"
     state: absent  
   ignore_errors: yes
 
-- name: START VALIDDATE LAB - Limpiar el historial de bash
+- name: "START VALIDDATE LAB - Eliminar archivo de history del bash  {{ ansible_env.HOME }}/.bash_history, usuario root "
+  become: yes
+  ansible.builtin.file:
+    path: "/root/.bash_history"
+    state: absent  
+  ignore_errors: yes
+
+- name: START VALIDDATE LAB - Limpiar el historial de bash user student
+  become_user: student
+  ansible.builtin.shell: "history -c "
+  ignore_errors: yes
+
+- name: START VALIDDATE LAB - Limpiar el historial de bash user root
   become: yes
   ansible.builtin.shell: "history -c "
   ignore_errors: yes
 
 - name: START VALIDATE LAB - Obtener lista de IDs de tareas de AT
+  become_user: student
   shell: "atq | awk '{print $1}'"
   register: at_jobs
   changed_when: false
 
 - name: START VALIDATE LAB - Eliminar cada tarea encontrada
+  become_user: student
   shell: "atrm {{ item }}"
   loop: "{{ at_jobs.stdout_lines }}"
   when: at_jobs.stdout_lines | length > 0
   register: result
+
+- name: START VALIDATE LAB - Detener el servicio atd
+  ansible.builtin.systemd_service:
+    name: atd
+    state: stopped
+
+- name: START VALIDATE LAB - Vaciar el archivo de secuencia .SEQ para reiniciar el ID a 0
+  ansible.builtin.file:
+    path: /var/spool/at/.SEQ
+    state: touch    # Asegura que el archivo exista
+    modification_time: preserve
+    access_time: preserve
+    # El truco: Para vaciarlo por completo usamos una redirección o el módulo copy con contenido vacío
+    
+- name: START VALIDATE LAB - Forzar que quede en 0 bytes
+  ansible.builtin.copy:
+    content: ""
+    dest: /var/spool/at/.SEQ
+    mode: '0600' # Permisos por defecto del sistema para este archivo
+
+- name: START VALIDATE LAB - Iniciar el servicio atd con la cola limpia
+  ansible.builtin.systemd_service:
+    name: atd
+    state: started
 
 - name: START VALIDATE LAB - Verificar y remover archivos generados
   ansible.builtin.file:

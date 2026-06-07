@@ -8,7 +8,8 @@
     - name: "START CONFIG LAB - Remove directory validator: {{ failover_validator_temp }} temporal"
       become: yes
       ansible.builtin.shell:
-        cmd: "rm -rf {{ failover_validator_temp }}"
+        cmd: "sudo rm -rf {{ failover_validator_temp }}"
+      ignore_errors: yes
           
     - name: "START CONFIG LAB - Create directory validator: {{ failover_validator_temp }} temporal"
       become: yes

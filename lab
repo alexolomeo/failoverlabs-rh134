@@ -113,9 +113,15 @@ fi
 LOG_FILE="/var/log/labtool.log"
 
 log_action() {
+
+if [ ! -f "$LOG_FILE" ]; then
+	sudo touch "$LOG_FILE"
+	sudo chmod 666 "$LOG_FILE"
+fi
+
     local action="$1"
     local lab_name="$2"
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - Acción: $action, Lab: $lab_name" >> "$LOG_FILE"
+    sudo echo "$(date '+%Y-%m-%d %H:%M:%S') - Acción: $action, Lab: $lab_name" >> "$LOG_FILE"
 }
 
 # Llamada a log_action en cada acción
