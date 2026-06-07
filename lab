@@ -45,7 +45,7 @@ FLAG_GRADE="/usr/local/.labs/$LAB_NAME/active-grade"
 # Función para validar un solo intento
 check_play_lab_grade() {
 
-    if [ -f "$FLAG_PATH" ]; then
+    if [ -f "$FLAG_PATH" ] && [ ! -f "$FLAG_GRADE" ]; then
         echo ""
         echo "Tienes inicializado en modo simulacion"
         echo "-------------------------------------------------------------"
