@@ -19,7 +19,7 @@ LAB_NAME="$2"
 LAB_PATH="$LABS_DIR/$LAB_NAME"
 
 # mode_debug 'info'
-MODE_DEBUG=$LOG_LEVEL
+MODE_DEBUG=$log_level
 
 # Función para listar labs
 list_labs() {
@@ -200,12 +200,22 @@ case "$ACTION" in
     info)
         log_action "info" "$LAB_NAME"
         if [[ -d "$LAB_PATH" ]]; then
+
             echo "Información sobre el lab '$LAB_NAME':"
-            if [[ -f "$LAB_PATH/instructions.txt" ]]; then
-                cat "$LAB_PATH/instructions.txt"
+
+            if [[ "$grade_mode_strict_evaluation" == "enable" && "$simulate_strict" == "enable" ]]; then
+                FILE_TO_SHOW="$LAB_PATH/instructions.txt"
             else
-                echo "No hay instrucciones disponibles para este laboratorio."
+                # Si ambas están en "disable" (o cualquier otra cosa que no sea enable), mostramos el completo.
+                FILE_TO_SHOW="$LAB_PATH/instructions_complete.txt"
             fi
+
+            if [[ -f "$FILE_TO_SHOW" ]]; then
+                cat "$FILE_TO_SHOW"
+            else
+                echo "No hay instrucciones disponibles (${FILE_TO_SHOW##*/}) para este laboratorio."
+            fi
+
         else
             echo "El laboratorio '$LAB_NAME' no existe."
         fi

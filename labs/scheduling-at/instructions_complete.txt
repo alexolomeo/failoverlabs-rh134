@@ -1,0 +1,110 @@
+AT-LAB(1)                    Manual del Administrador                  AT-LAB(1)
+
+NAME
+       at-lab-guiado - Laboratorio guiado para la programación de trabajos
+       usuarios diferidos.
+
+SYNOPSIS
+       ssh student@servera
+       echo "COMMAND" | at TIME
+       at [-q QUEUE] TIME
+       atq
+       watch atq
+       at -c JOB_NUMBER
+       atrm JOB_NUMBER
+
+DESCRIPTION
+       Este laboratorio práctico guía al usuario "student" en el uso del
+       comando at para programar, inspeccionar, monitorear y eliminar trabajos
+       que se ejecutarán en momentos específicos en el futuro dentro del
+       entorno "servera".
+
+   Resultados esperados:
+       * Programar trabajos en diferido con sintaxis relativas y absolutas.
+       * Inspeccionar el entorno y comandos de un trabajo en cola.
+       * Monitorear la cola de trabajos en tiempo real.
+       * Eliminar trabajos específicos antes de su ejecución.
+
+PROCEDIMIENTO (PASO A PASO)
+
+   Paso 1: Acceso al entorno
+       Inicie sesión en el servidor remoto 'servera' desde 'workstation'.
+
+       [student@workstation ~]$ ssh student@servera
+       [student@servera ~]$
+
+   Paso 2: Programación no interactiva (+2 minutos)
+       Programe un trabajo para dentro de 2 minutos que guarde la salida del
+       comando 'date' en '/home/student/myjob.txt'.
+
+       [student@servera ~]$ echo "date >> /home/student/myjob.txt" | at now +2min
+       warning: commands will be executed using /bin/sh
+       job 1 at Thu Feb 16 18:51:16 2023
+
+   Paso 3: Verificación inicial de la cola
+       Compruebe que el trabajo ha sido encolado correctamente.
+
+       [student@servera ~]$ atq
+       1       Thu Feb 16 18:51:16 2023 a student
+
+   Paso 4: Monitoreo en tiempo real
+       Use 'watch' para observar cómo el demonio 'atd' procesa y remueve el 
+       trabajo una vez transcurridos los 2 minutos. Presione Ctrl+C para salir.
+
+       [student@servera ~]$ watch atq
+       Every 2.0s: atq              servera.lab.example.com: Thu Feb 16 17:58:50 2023
+       1       Thu Feb 16 18:51:16 2023 a student
+
+   Paso 5: Validación del resultado
+       Confirme que el archivo se creó y contiene la salida esperada.
+
+       [student@servera ~]$ cat myjob.txt
+       Thu Feb 16 06:51:16 PM EDT 2023
+
+   Paso 6: Programación interactiva en colas específicas
+       Cree dos trabajos interactivos utilizando colas personalizadas. Para 
+       guardar y salir de la consola de 'at', presione Ctrl+D.
+
+       Trabajo A (Cola 'g', Ejecución 16:00):
+       [student@servera ~]$ at -q g teatime
+       warning: commands will be executed using /bin/sh
+       at> echo "It's teatime" >> /home/student/tea.txt
+       at> <Ctrl+D>
+       job 2 at Fri Feb 17 16:00:00 2023
+
+       Trabajo B (Cola 'b', Ejecución 16:05):
+       [student@servera ~]$ at -q b 16:05
+       warning: commands will be executed using /bin/sh
+       at> echo "The cookies are good" >> /home/student/cookies.txt
+       at> <Ctrl+D>
+       job 3 at Fri Feb 17 16:05:00 2023
+
+   Paso 7: Inspección de contenido de trabajos en cola
+       Examine la cola y luego verifique el script generado por 'at' para 
+       los ID correspondientes (las líneas finales mostrarán su comando).
+
+       [student@servera ~]$ atq
+       2       Fri Feb 17 16:00:00 2023 g student
+       3       Fri Feb 17 16:05:00 2023 b student
+
+       [student@servera ~]$ at -c 2
+       ...output omitted...
+       echo "It's teatime" >> /home/student/tea.txt
+
+       [student@servera ~]$ at -c 3
+       ...output omitted...
+       echo "The cookies are good" >> /home/student/cookies.txt
+
+   Paso 8: Eliminación de trabajos
+       Elimine el trabajo programado para las 16:00 (ID 2) y confirme su baja.
+
+       [student@servera ~]$ atrm 2
+       [student@servera ~]$ atq
+       3       Fri Feb 17 16:05:00 2023 b student
+
+   Paso 9: Cierre de sesión
+       Salga del servidor para regresar a workstation.
+
+       [student@servera ~]$ exit
+
+Linux Lab Manual                 2026-06-07                        AT-LAB(1)

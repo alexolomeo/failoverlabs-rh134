@@ -1,0 +1,67 @@
+AT-EVAL(1)                   Manual de Evaluación                  AT-EVAL(1)
+
+NAME
+       at-eval-lab - Desafío práctico de automatización diferida con AT.
+
+SYNOPSIS
+       Este documento contiene únicamente las directivas del laboratorio. El
+       estudiante deberá aplicar los comandos correctos para cumplir los
+       objetivos sin asistencia de código.
+
+DESCRIPTION
+       El objetivo de esta práctica es evaluar la capacidad del administrador
+       para gestionar tareas diferidas en el tiempo mediante el subsistema 'at'.
+       Todas las tareas se realizarán desde la máquina 'workstation' conectándose
+       al nodo 'servera' con las credenciales de 'student'.
+
+REQUERIMIENTOS DEL LABORATORIO (PREGUNTAS)
+
+   1. Conexión Remota
+       Establezca una sesión segura SSH hacia el nodo 'servera' utilizando el
+       usuario del sistema asignado.
+
+   2. Tarea Automatizada en Segundo Plano (Tiempo Relativo)
+       Programe una tarea no interactiva que se ejecute exactamente dentro de 
+       dos minutos. La tarea debe registrar la fecha y hora del sistema 
+       (comando date) de forma incremental en el archivo:
+       '/home/student/myjob.txt'.
+
+   3. Verificación de Cola de Trabajo
+       Consulte la lista de trabajos pendientes para verificar que su tarea del 
+       punto anterior posea un ID de trabajo válido y esté agendada.
+
+   4. Monitoreo Activo
+       Utilice una herramienta nativa de Linux para supervisar la cola de 'at' 
+       en tiempo real con actualizaciones cada 2 segundos. Permanezca viendo la 
+       pantalla hasta que el trabajo desaparezca de la lista (lo que indica su 
+       ejecución) y finalice el monitor.
+
+   5. Auditoría de Resultados
+       Inspeccione el sistema de archivos para comprobar que el archivo 
+       '/home/student/myjob.txt' fue creado exitosamente con la estampa de tiempo.
+
+   6. Programación Interactiva multi-cola (Tiempos Absolutos)
+       Cree dos tareas de manera interactiva sin usar tuberías (pipes):
+
+       * Tarea A: Encolarla en la cola 'g'. Debe ejecutarse a la hora del té
+         ('teatime'). Debe añadir el texto "It's teatime" al archivo 
+         '/home/student/tea.txt'.
+       * Tarea B: Encolarla en la cola 'b'. Debe ejecutarse a las 16:05. Debe 
+         añadir el texto "The cookies are good" al archivo 
+         '/home/student/cookies.txt'.
+
+   7. Inspección de Metadatos
+       Liste los ID de trabajos activos y proceda a leer las variables de 
+       entorno y los comandos internos de ambos trabajos pendientes utilizando 
+       el visor del comando 'at'.
+
+   8. Cancelación de Tareas
+       Identifique el ID del trabajo asignado a la hora del té (cola 'g') y 
+       remuévalo permanentemente del sistema de colas.
+
+   9. Validación Final
+       Realice una última consulta a la cola de trabajos para asegurarse de que 
+       únicamente queda pendiente el trabajo de la cola 'b'. Al terminar,
+       cierre la sesión SSH.
+
+Linux Lab Manual                 2026-06-07                        AT-EVAL(1)
