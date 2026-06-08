@@ -1,0 +1,12 @@
+---
+
+- name: FINISH VALIDATE LAB - Eliminar la lista cronjobs generada
+  shell: "cron -r"
+  changed_when: false
+
+- name: FINISH VALIDATE LAB - Verificar y remover archivos generados
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ validator_start_file }}"
+  ignore_errors: yes

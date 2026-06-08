@@ -48,9 +48,9 @@
             <tr>
                 <th>ID</th>
                 <th>Validación</th>
-                <th>Estado</th>
                 <th>Detalles de Salida</th>
                 <th>Ponderación</th>
+                <th>Estado</th>
             </tr>
         </thead>
         <tbody>
@@ -58,32 +58,31 @@
             <tr>
                 <td>{{ item.id }}</td>
                 <td style="font-weight: 500;">{{ item.name }}</td>
+                <td style="font-family: monospace; color: #475569;">{{ item.detail }}</td>
+                <td>{{ item.weight }} pts</td>
                 <td>
                     <!-- Corregido: Clase dinámica según el estado -->
                     <span class="status-pill {{ 'status-success' if item.status == 'SUCCESS' else 'status-failed' }}">
                         {{ item.status }}
                     </span>
                 </td>
-                <td style="font-family: monospace; color: #475569;">{{ item.detail }}</td>
-                <td>{{ item.weight }} pts</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
-
 <div class="score-section">
     <div class="score-circle">
         <div class="score-value">{{ total_score }}</div>
         <div class="score-label">PUNTAJE ACUMULADO</div>
-        
+
         {# CORRECCIÓN AQUÍ: Agregamos | int en el color y en los if #}
         <p style="margin: 10px 0 0 0; font-size: 10pt; font-weight: bold; color: {{ '#166534' if total_score | int >= 80 else '#991b1b' }};">
-            {% if total_score | int >= 80 %} 
+            {% if total_score | int >= 80 %}
                 APTO / PASS
-            {% elif total_score | int >= 50 %} 
+            {% elif total_score | int >= 50 %}
                 REVISIÓN REQUERIDA
-            {% else %} 
+            {% else %}
                 NO APTO / FAIL
             {% endif %}
         </p>
@@ -91,7 +90,7 @@
 </div>
 
     <div class="footer">
-        Generado automáticamente por  RHEL9 y Ansible 
+        Generado automáticamente por failoverlabs con tecnología RHEL9 y Ansible 
     </div>
 </div>
 

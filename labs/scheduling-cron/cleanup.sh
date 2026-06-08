@@ -51,7 +51,6 @@ if [[ ! "$LOG_LEVEL" =~ ^(none|info|basic|debug)$ ]]; then
     exit 1
 fi
 
-
 if [ -f "/tmp/$LAB_NAME.log" ]; then
 	sudo rm -rf /tmp/$LAB_NAME.log
 fi
@@ -62,35 +61,29 @@ fi
 case "$LOG_LEVEL" in
     none|info)
         # INFO AND NONE: Silencioso, todo redirigido al log
-        sudo ansible-playbook -i $WORKSPACE/server.lab $WORKSPACE/$LAB_NAME.yml -e "failover_mode='start'" > /tmp/$LAB_NAME.log 2>&1
+        sudo ansible-playbook -i $WORKSPACE/server.lab $WORKSPACE/$LAB_NAME.yml -e "failover_mode='finish'" > /tmp/$LAB_NAME.log 2>&1
         ;;
     basic)
         # BASIC: Se muestra directamente en pantalla (sin redirigir a archivo)
-        sudo ansible-playbook -i $WORKSPACE/server.lab $WORKSPACE/$LAB_NAME.yml -e "failover_mode='start'"
+        sudo ansible-playbook -i $WORKSPACE/server.lab $WORKSPACE/$LAB_NAME.yml -e "failover_mode='finish'"
         ;;
     debug)
         # DEBUG: Modo muy verboso (-vvvv) en pantalla
-        sudo ansible-playbook -i $WORKSPACE/server.lab $WORKSPACE/$LAB_NAME.yml -e "failover_mode='start'" -vvvv
+        sudo ansible-playbook -i $WORKSPACE/server.lab $WORKSPACE/$LAB_NAME.yml -e "failover_mode='finish'" -vvvv
         ;;
 esac
 
-echo "Starting lab."
+echo "Finishing lab."
 echo ""
 print_line "· Checking lab systems" "SUCCESS"
 sleep 2
-print_line "· Ensuring at is installed on servera" "SUCCESS"
+print_line "· Removing cronjobs for student from servera" "SUCCESS"
 sleep 2
-print_line "· Ensuring no deferred jobs for student on servera" "SUCCESS"
-sleep 2
-print_line "· Ensuring /home/student/myjob.txt does not exist on servera" "SUCCESS"
-sleep 2
-print_line "· Ensuring /home/student/tea.txt does not exist on servera" "SUCCESS"
-sleep 2
-print_line "· Ensuring /home/student/cookies.txt does not exist on servera" "SUCCESS"
+print_line "· Removing the output file for cronjob from servera" "SUCCESS"
 echo ""
 
-
-if [ "$LOG_LEVEL" = "info" ] && [ -f "/tmp/$LAB_NAME.log" ]; then	
+if [ "$LOG_LEVEL" = "info" ] && [ -f "/tmp/$LAB_NAME.log" ]; then
 	cat /tmp/$LAB_NAME.log | tail -3
 fi
+
 

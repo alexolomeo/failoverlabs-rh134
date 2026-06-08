@@ -1,0 +1,13 @@
+---
+
+- name: START VALIDATE LAB - Eliminar toda la lista de cron
+  become_user: student
+  shell: "cron -r"
+  changed_when: false
+
+- name: START VALIDATE LAB - Verificar y remover archivos generados
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ validator_start_file }}"
+  ignore_errors: yes

@@ -78,15 +78,11 @@ echo "Starting lab."
 echo ""
 print_line "· Checking lab systems" "SUCCESS"
 sleep 2
-print_line "· Ensuring at is installed on servera" "SUCCESS"
+print_line "· Ensuring cronie is installed on servera" "SUCCESS"
 sleep 2
-print_line "· Ensuring no deferred jobs for student on servera" "SUCCESS"
+print_line "· Ensuring empty crontab for student on servera" "SUCCESS"
 sleep 2
-print_line "· Ensuring /home/student/myjob.txt does not exist on servera" "SUCCESS"
-sleep 2
-print_line "· Ensuring /home/student/tea.txt does not exist on servera" "SUCCESS"
-sleep 2
-print_line "· Ensuring /home/student/cookies.txt does not exist on servera" "SUCCESS"
+print_line "· Ensuring no output file for cronjob exists on servera" "SUCCESS"
 echo ""
 
 

@@ -1,0 +1,298 @@
+---
+
+- name: "FINISH LAB - Eliminar archivo de history del bash  {{ ansible_env.HOME }}/.bash_history, del usuario root"
+  become: yes
+  ansible.builtin.file:
+    path: "/root/.bash_history"
+    state: absent  
+  ignore_errors: yes
+
+- name: "FINISH LAB - Eliminar archivo de history del bash  {{ ansible_env.HOME }}/.bash_history, del usuario student"
+  become: yes
+  become_user: student
+  ansible.builtin.file:
+    path: "/home/student/.bash_history"
+    state: absent  
+  ignore_errors: yes
+
+- name: FINISH LAB - Limpiar el historial de bash
+  become: yes
+  ansible.builtin.shell: "history -c "
+  ignore_errors: yes
+
+- name: FINISH LAB - Limpiar el historial de bash del usuario student
+  become: yes
+  become_user: student
+  ansible.builtin.shell: "history -c "
+  ignore_errors: yes
+
+- name: FINISH LAB - Información del sistema operativo
+  ansible.builtin.shell: hostnamectl; uname -a; cat /etc/os-release; uptime; date; timedatectl  
+  register: system_info
+
+- name: FINISH LAB - Información de kernel y CPU
+  ansible.builtin.shell: lscpu; nproc; top -bn1 | head -20
+  register: cpu_info
+
+- name: FINISH LAB - Memoria RAM
+  ansible.builtin.shell: free -h; cat /proc/meminfo; vmstat 1 5
+  register: ram_info
+
+- name: FINISH LAB - IP y interfaces de red
+  ansible.builtin.shell: ip addr show; ip route; cat /etc/resolv.conf
+  register: network_info
+
+- name: FINISH LAB - Espacio en disco
+  ansible.builtin.shell: df -hi ; lsblk ; blkid ; mount 
+  register: discos
+
+- name: FINISH LAB - LVM PS
+  ansible.builtin.shell: pvs ; pvdisplay  
+  register: lvm_ps
+
+- name: FINISH LAB - LVM VG
+  ansible.builtin.shell: vgs ; vgdisplay
+  register: lvm_vg
+
+- name: FINISH LAB - LVM LV
+  ansible.builtin.shell: lvs ; lvdisplay
+  register: lvm_lv
+
+- name: FINISH LAB - Storage Stratis details
+  ansible.builtin.shell: stratis pool list; stratis filesystem list; stratis blockdev list 
+  register: stratis_info
+
+- name: FINISH LAB - Puertos en escucha
+  ansible.builtin.shell: ss -tulpn; ss -ant
+  register: port_info
+
+- name: FINISH LAB - Procesos top 20 por uso de memoria
+  ansible.builtin.shell: ps aux --sort=-%mem | head -20; ps aux --sort=-%cpu | head -20
+  register: process_info
+
+- name: FINISH LAB - Servicios y systemd
+  ansible.builtin.shell: systemctl list-units --type=service --state=running; systemctl --failed
+  register: services_info
+
+- name: FINISH LAB - SELinux details
+  ansible.builtin.shell: getenforce; sestatus -v; getsebool -a; semodule -l;  ps -eZ 
+  register: selinux_info
+
+- name: FINISH LAB - Firewall details
+  ansible.builtin.shell: firewall-cmd --get-active-zones ;firewall-cmd --list-all-zones
+  register: firewall_info
+
+- name: FINISH LAB - Hardware details
+  ansible.builtin.shell: dmidecode -t system ; dmidecode -t memory
+  register: hardware_info
+
+- name: FINISH LAB - Swap details
+  ansible.builtin.shell: swapon -s
+  register: swap_info
+
+- name: FINISH LAB - Fstab details
+  ansible.builtin.shell: cat /etc/fstab
+  register: fstab_info
+
+- name: Generar os_reporte desde plantilla J2
+  template:
+    src: templates/os_report_template.j2
+    dest: "{{ failover_remote_os_report }}"
+
+- name: "FINISH LAB - Leer contenido del os_report.log en servera"
+  ansible.builtin.slurp:
+    src: "{{ failover_remote_os_report }}"
+  register: os_report_log
+
+- name: "FINISH LAB - Crear el archivo history.log en workstation con el contenido leído"
+  delegate_to: workstation
+  ansible.builtin.copy:
+    content: "{{ os_report_log['content'] | b64decode }}"
+    dest: "{{ failover_remote_os_report }}"
+    mode: '0644'
+
+- name: FINISH LAB - Extraer la hora de inicio del archivo de log
+  ansible.builtin.shell: |
+    grep "Inicia el laboratorio" {{ failover_remote_rsyslog }} | tail -n 1 | awk -F'=' '{print $2}' | tr -d '")'
+  register: raw_start_time
+  changed_when: false
+
+- name: FINISH LAB - Setear varriable de fecha para cargar al --since del journalctl
+  set_fact:
+    journal_start_time: "{{ raw_start_time.stdout }}"
+
+- name: "FINISH LAB - Debug logs de journal_start_time {{ raw_start_time.stdout }}"
+  ansible.builtin.debug:
+    var: journal_start_time
+
+- name: FINISH LAB - Exportar logs detallados del sistema y servicios (systemd journal)
+  ansible.builtin.shell: >
+    journalctl 
+    --since="{{ journal_start_time }}" 
+    --output=short-iso 
+    > "{{ failover_remote_validator_audit }}/journal.log"
+  changed_when: true
+
+- name: FINISH LAB - Exportar logs específicos de Auditoría (Auditd / Security)
+  ansible.builtin.shell: >
+    journalctl 
+    --since="{{ journal_start_time }}" _TRANSPORT=audit 
+    > "{{ failover_remote_validator_audit }}/audit_security.log"
+  changed_when: true
+  failed_when: false # Por si auditd no está activo, que no rompa el playbook
+
+- name: FINISH LAB - Exportar logs de Kernel, Boot y Alertas Críticas (Panic/Alert)
+  ansible.builtin.shell: >
+    journalctl -k
+    --since="{{ journal_start_time }}"
+    > "{{ failover_remote_validator_audit }}/kernel_boot.log"
+  changed_when: true
+
+- name: FINISH LAB - Export critical logs
+  shell: >
+    journalctl
+    --since "{{ journal_start_time }}"
+    -p warning
+    > "{{ failover_remote_validator_audit }}/warnings.log"
+  changed_when: true
+
+- name: FINISH LAB - Security related journal
+  shell: >
+    journalctl
+    SYSLOG_FACILITY=4
+    --since "{{ journal_start_time }}"
+    > "{{ failover_remote_validator_audit }}/security.log"
+  changed_when: true
+
+- name: FINISH LAB - Boot events
+  shell: >
+    journalctl -b
+    --since "{{ journal_start_time }}"
+    > "{{ failover_remote_validator_audit }}/boot.log"
+  changed_when: true
+
+- name: FINISH LAB - Failed services
+  shell: >
+    systemctl --failed
+    > "{{ failover_remote_validator_audit }}/failed-services.log"
+  changed_when: true
+
+- name: FINISH LAB - Firewalld events
+  shell: >
+    journalctl -u firewalld
+    --since "{{ journal_start_time }}"
+    > "{{ failover_remote_validator_audit }}/firewalld.log"
+  changed_when: true
+
+- name: FINISH LAB - SSH activity
+  shell: >
+    journalctl -u sshd
+    --since "{{ journal_start_time }}"
+    > "{{ failover_remote_validator_audit }}/sshd.log"
+  changed_when: true
+
+- name: FINISH LAB - NFS activity
+  shell: >
+    journalctl
+    -u nfs-server
+    --since "{{ journal_start_time }}"
+    > "{{ failover_remote_validator_audit }}/nfs.log"
+  ignore_errors: true
+  changed_when: true
+
+- name: FINISH LAB - Export journal JSON
+  shell: >
+    journalctl
+    --since "{{ journal_start_time }}"
+    -o json
+    > "{{ failover_remote_validator_audit }}/journal-source.json"
+  changed_when: true
+
+- name: FINISH LAB - Create tarball
+  community.general.archive:
+    path: "{{ failover_remote_validator_audit }}/*"
+    dest: "{{ failover_remote_validator_temp }}/auditlog.tar.gz"
+    format: gz
+    mode: 0777
+
+- name: FINISH LAB - Descargar el archivo comprimido a la Workstation
+  ansible.builtin.fetch:
+    src: "{{ failover_remote_validator_temp }}/auditlog.tar.gz"
+    dest: "{{ failover_remote_validator_temp }}/auditlog.tar.gz"
+    flat: yes 
+
+- name: "FINISH LAB - Obtener ID de secuencia desde workstation"
+  delegate_to: workstation
+  ansible.builtin.command: cat "{{ failover_remote_workspace }}/{{ failover_remote_project }}/sequence/sequence.ini"
+  register: lab_sequence_id
+  changed_when: false
+
+- name: "FINISH LAB - Establecer ID de laboratorio como fact"
+  set_fact:
+    lab_id: "{{ lab_sequence_id.stdout | trim }}"
+
+- name: FINISH LAB - Copy All temporal files to historial simulate on servera
+  ansible.builtin.command:
+    argv:
+      - cp
+      - -a
+      - "{{ failover_remote_validator_temp }}/."
+      - "{{ failover_remote_workdir_simulate }}/{{ lab_id }}/"
+  changed_when: true
+
+- name: FINISH LAB - Copy All temporal files to historial simulate on workstation
+  delegate_to: workstation
+  ansible.builtin.command:
+    argv:
+      - cp
+      - -a
+      - "{{ failover_remote_validator_temp }}/."
+      - "{{ failover_remote_workdir_simulate }}/{{ lab_id }}/"
+  changed_when: true
+
+- name: FINISH LAB - Extract archive locally
+  delegate_to: workstation
+  unarchive:
+    src: "{{ failover_remote_workdir_simulate }}/{{ lab_id }}/auditlog.tar.gz"
+    dest: "{{ failover_remote_workdir_simulate }}/{{ lab_id }}/"
+    remote_src: false
+
+- name: FINISH LAB - Obtener directorios vacíos simulate
+  become: yes
+  delegate_to: workstation
+  ansible.builtin.command: >
+    find {{ failover_remote_workdir_simulate }}
+    -mindepth 1
+    -maxdepth 1
+    -type d
+    -empty
+  register: empty_dirs_simulate
+  changed_when: false
+
+- name: FINISH LAB - Eliminar directorios vacíos simulate
+  become: yes
+  delegate_to: workstation
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ empty_dirs_simulate.stdout_lines }}"
+
+- name: FINISH LAB - Obtener directorios vacíos exam
+  become: yes
+  delegate_to: workstation
+  ansible.builtin.command: >
+    find {{ failover_remote_workdir_exam }}
+    -mindepth 1
+    -maxdepth 1
+    -type d
+    -empty
+  register: empty_dirs_exam
+  changed_when: false
+
+- name: FINISH LAB - Eliminar directorios vacíos exam
+  become: yes
+  delegate_to: workstation
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ empty_dirs_exam.stdout_lines }}"

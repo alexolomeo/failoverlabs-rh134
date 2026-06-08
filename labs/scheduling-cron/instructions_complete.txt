@@ -1,0 +1,116 @@
+CRONTAB-LAB(1)              scheduling-cron             CRONTAB-LAB(1)
+
+NOMBRE
+       crontab-lab-guiado - Ejercicio guiado para la programación de trabajos 
+       cron recurrentes de usuario sin privilegios.
+
+SINOPSIS
+       Laboratorio completo con objetivos, instrucciones detalladas, comandos de
+       preparación, comandos de ejecución y respuestas integradas.
+
+DESCRIPCIÓN
+       Este manual describe el procedimiento completo para programar comandos que
+       se ejecutan en un programa de repetición como un usuario no privilegiado 
+       utilizando la herramienta crontab(1).
+
+       El entorno consta de una máquina de control llamada 'workstation' y un
+       servidor de destino llamado 'servera'. Se interactúa como el usuario 
+       'student'.
+
+RESULTADOS DEL APRENDIZAJE
+       Al completar este laboratorio, el usuario será capaz de:
+       1. Programar trabajos recurrentes para ejecutar como usuario no privilegiado.
+       2. Inspeccionar los comandos que ejecuta un trabajo recurrente programado.
+       3. Eliminar trabajos recurrentes programados de manera segura.
+
+PASOS DEL LABORATORIO (CON RESOLUCIÓN)
+
+   Paso 1: Preparación del Entorno
+       En la máquina 'workstation', inicie el entorno de laboratorio específico.
+       Esto garantiza que todos los recursos necesarios estén configurados.
+
+       Comando de inicio:
+       [student@workstation ~]$ lab start scheduling-cron
+
+   Paso 2: Acceso al Servidor de Destino
+       Conéctese mediante SSH a la máquina 'servera' con las credenciales de
+       'student' suministradas por el entorno.
+
+       Comando de conexión:
+       [student@workstation ~]$ ssh student@servera
+       ...output omitted...
+       [student@servera ~]$
+
+   Paso 3: Determinación del Rango de Días Requerido
+       Se solicita programar un trabajo que se ejecute cada dos minutos, pero
+       ÚNICAMENTE desde un día antes hasta un día después del día actual. No debe
+       ejecutarse ningún otro día de la semana.
+
+       Para resolver esto, primero revise la fecha actual del sistema:
+       [student@servera ~]$ date
+       Wed Mar 15 07:33:01 PM EDT 2023
+
+       Nota explicativa: El día actual es miércoles (Wed). Por lo tanto, el rango 
+       debe abarcar desde el martes (Tue) hasta el jueves (Thu).
+
+       Puede automatizar el cálculo de los nombres de los días usando:
+       [student@servera ~]$ date -d "last day" +%a
+       Tue
+       [student@servera ~]$ date -d "next day" +%a
+       Thu
+
+   Paso 4: Programación del Trabajo Recurrente (Crontab)
+       Abra el editor cron interactivo para el usuario actual.
+       [student@servera ~]$ crontab -e
+
+       Solución - Inserte la siguiente sintaxis en el archivo:
+       */2 * * * Tue-Thu /usr/bin/date >> /home/student/my_first_cron_job.txt
+
+       Procedimiento de guardado: Presione 'Esc', escriba ':wq' y presione 'Enter'.
+       Salida esperada:
+       crontab: installing new crontab
+       [student@servera ~]$
+
+   Paso 5: Inspección y Verificación de los Trabajos Programados
+       Verifique que la tarea se haya registrado correctamente en el demonio cron
+       y que la sintaxis sea la correcta.
+
+       Comando de inspección:
+       [student@servera ~]$ crontab -l
+       */2 * * * Tue-Thu /usr/bin/date >> /home/student/my_first_cron_job.txt
+
+   Paso 6: Espera y Validación de la Ejecución Directa
+       Utilice un bucle condicional en la terminal para pausar la consola hasta 
+       que el archivo de salida sea creado por el proceso cron (se ejecuta cada 2 min).
+
+       Comando de espera:
+       [student@servera ~]$ while ! test -f my_first_cron_job.txt; do sleep 1s; done
+
+       Una vez que el prompt regrese, verifique que el archivo contenga datos:
+       [student@servera ~]$ cat my_first_cron_job.txt
+       Wed Mar 15 07:40:01 PM EDT 2023
+
+   Paso 7: Limpieza de Trabajos Programados
+       Elimine todas las tareas cron activas del usuario 'student' para evitar
+       efectos residuales.
+
+       Comando de eliminación:
+       [student@servera ~]$ crontab -r
+
+       Comando de verificación posterior:
+       [student@servera ~]$ crontab -l
+       no crontab for student
+
+   Paso 8: Finalización y Cierre del Laboratorio
+       Salga de la sesión SSH para regresar a la máquina base 'workstation'.
+       [student@servera ~]$ exit
+       logout
+       Connection to servera closed.
+
+       Ejecute el comando de limpieza final en 'workstation':
+       [student@workstation ~]$ lab finish scheduling-cron
+
+VÉASE TAMBIÉN
+       crontab(1), crontab(5), cron(8)
+
+Linux                               2026-06-08                    CRONTAB-LAB(1)

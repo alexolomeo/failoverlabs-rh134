@@ -8,7 +8,7 @@
         msg: "* La variable failover_number es: {{ failover_number }} "
       when: inventory_hostname in groups['servera']
 
-   - name: START CONFIG LAB - Cerrar todas las sesiones SSH activas en servera, excepto la de Ansible
+    - name: START CONFIG LAB - Cerrar todas las sesiones SSH activas en servera, excepto la de Ansible
       become: yes
       ansible.builtin.shell: |
         # Obtener la lista de procesos sshd relacionados con root y student

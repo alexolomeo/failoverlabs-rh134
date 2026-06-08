@@ -1,0 +1,82 @@
+CRONTAB-EJERCICIO(1)        scheduling-cron       CRONTAB-EJERCICIO(1)
+
+NOMBRE
+       crontab-ejercicio - Enunciado de laboratorio para la programación de 
+       trabajos recurrentes en entornos Linux.
+
+SINOPSIS
+       Guía de laboratorio tipo "desafío a ciegas" con instrucciones detalladas, 
+       requerimientos técnicos mínimos y validaciones operativas. Sin soluciones.
+
+DESCRIPCIÓN
+       Este documento proporciona los requisitos explícitos para realizar el 
+       laboratorio de automatización de tareas. El objetivo es configurar el 
+       entorno, calcular la expresión cron requerida, verificar su ejecución en 
+       tiempo real y limpiar la configuración sin asistencia de comandos resueltos.
+
+REQUISITOS PREVIOS Y ENTORNO
+       • Máquina de origen: workstation (Usuario: student)
+       • Máquina de destino: servera (Usuario: student)
+       • Herramienta de aprovisionamiento: script 'lab'
+
+OBJETIVOS METOLÓGICOS (DESAFÍOS)
+
+   Desafío 1: Inicialización del Entorno
+       Inicie sesión en 'workstation' y use el comando de gestión de laboratorios
+       'lab' para arrancar el escenario denominado "scheduling-cron".
+       [!] OBJETIVO: Deberá observar la confirmación de que el entorno está listo.
+
+   Desafío 2: Establecimiento de Conexión Segura
+       Realice una conexión por SSH desde 'workstation' hacia el host 'servera' 
+       utilizando el usuario 'student'. No continúe hasta tener el prompt en 'servera'.
+
+   Desafío 3: Análisis Temporal Dinámico (Pregunta Crítica)
+       Antes de programar cualquier tarea, determine la fecha del sistema actual. 
+       A partir de esa fecha, calcule manualmente o mediante comandos del sistema 
+       el nombre corto del día anterior ("last day") y del día posterior ("next day").
+       Anote estos datos, ya que formarán el rango de ejecución restringido.
+
+   Desafío 4: Diseño e Inserción de la Tarea Recurrente (Crontab)
+       Acceda al editor de configuración cron del usuario 'student'. Debe añadir una 
+       única línea de instrucción que cumpla taxativamente con las siguientes reglas:
+       
+       1. Frecuencia: Debe ejecutarse estrictamente cada dos minutos.
+       2. Restricción de días: Debe ejecutarse únicamente dentro del rango calculado 
+          en el Desafío 3 (desde un día antes del actual hasta un día después). No 
+          debe ejecutarse ningún otro día de la semana.
+       3. Acción: Debe ejecutar el comando ejecutable absoluto de 'date'.
+       4. Redirección: Debe anexar (no sobrescribir) la salida de la fecha y hora 
+          actuales al archivo absoluto: '/home/student/my_first_cron_job.txt'.
+       
+       [!] NOTA: Guarde los cambios y asegúrese de que el sistema confirme la 
+       instalación del nuevo archivo crontab.
+
+   Desafío 5: Auditoría y Listado del Servicio
+       Sin abrir el editor, liste las tareas programadas activas del usuario para 
+       comprobar visualmente que la sintaxis ingresada coincide exactamente con los 
+       requisitos del Desafío 4.
+
+   Desafío 6: Automatización de la Espera y Verificación
+       Escriba un bucle de control en la shell ('while') que detenga el prompt de 
+       comandos y compruebe segundo a segundo la existencia del archivo 
+       'my_first_cron_job.txt'. El bucle debe finalizar automáticamente cuando el 
+       archivo sea creado por el demonio cron.
+       
+       Una vez liberada la consola, visualice el contenido del archivo generado 
+       para confirmar que el formato de fecha se grabó correctamente.
+
+   Desafío 7: Destrucción de Evidencias y Configuración
+       Para cumplir las normativas de seguridad y mantenimiento, proceda a eliminar 
+       por completo el archivo crontab del usuario 'student'. Seguidamente, ejecute 
+       el comando de verificación para cerciorarse de que el sistema devuelva de 
+       forma explícita que el usuario no posee un archivo crontab activo.
+
+   Desafío 8: Desconexión y Cierre del Ciclo de Vida
+       Cierre la sesión SSH en 'servera' de manera limpia para retornar a la máquina 
+       'workstation'. Una vez en 'workstation', ejecute la finalización oficial del 
+       laboratorio "scheduling-cron" con el comando 'lab' para liberar el hardware.
+
+VÉASE TAMBIÉN
+       crontab(1), crontab(5)
+
+Linux                               2026-06-08                    CRONTAB-EJERCICIO(1)

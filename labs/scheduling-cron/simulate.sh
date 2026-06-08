@@ -5,12 +5,15 @@ print_line() {
     local status="$2"
     
     # Colores ANSI para la salida
+    local YELLOW='\033[0;33m'
     local GREEN='\033[0;32m'
     local RED='\033[0;31m'
     local NC='\033[0m' # No Color
 
     # Mapear el estado a color y formato
-    if [ "$status" == "SUCCESS" ]; then
+    if [ "$status" == "CHECKING" ]; then
+        status_formatted="${YELLOW}CHECKING${NC}"
+    elif [ "$status" == "SUCCESS" ]; then
         status_formatted="${GREEN}SUCCESS${NC}"
     elif [ "$status" == "FAILED" ]; then
         status_formatted="${RED}FAILED${NC}"
@@ -51,7 +54,6 @@ if [[ ! "$LOG_LEVEL" =~ ^(none|info|basic|debug)$ ]]; then
     exit 1
 fi
 
-
 if [ -f "/tmp/$LAB_NAME.log" ]; then
 	sudo rm -rf /tmp/$LAB_NAME.log
 fi
@@ -62,35 +64,43 @@ fi
 case "$LOG_LEVEL" in
     none|info)
         # INFO AND NONE: Silencioso, todo redirigido al log
-        sudo ansible-playbook -i $WORKSPACE/server.lab $WORKSPACE/$LAB_NAME.yml -e "failover_mode='start'" > /tmp/$LAB_NAME.log 2>&1
+        sudo ansible-playbook -i $WORKSPACE/server.lab $WORKSPACE/$LAB_NAME.yml -e "failover_mode='simulate'" > /tmp/$LAB_NAME.log 2>&1
         ;;
     basic)
         # BASIC: Se muestra directamente en pantalla (sin redirigir a archivo)
-        sudo ansible-playbook -i $WORKSPACE/server.lab $WORKSPACE/$LAB_NAME.yml -e "failover_mode='start'"
+        sudo ansible-playbook -i $WORKSPACE/server.lab $WORKSPACE/$LAB_NAME.yml -e "failover_mode='simulate'"
         ;;
     debug)
         # DEBUG: Modo muy verboso (-vvvv) en pantalla
-        sudo ansible-playbook -i $WORKSPACE/server.lab $WORKSPACE/$LAB_NAME.yml -e "failover_mode='start'" -vvvv
+        sudo ansible-playbook -i $WORKSPACE/server.lab $WORKSPACE/$LAB_NAME.yml -e "failover_mode='simulate'" -vvvv
         ;;
 esac
 
 echo "Starting lab."
 echo ""
-print_line "· Checking lab systems" "SUCCESS"
+print_line "· Validating execution on servera" "CHECKING"
 sleep 2
-print_line "· Ensuring at is installed on servera" "SUCCESS"
+print_line "· Validating cronjobs generate for student on servera" "CHECKING"
 sleep 2
-print_line "· Ensuring no deferred jobs for student on servera" "SUCCESS"
+print_line "· Validating if generate file on servera" "CHECKING"
 sleep 2
-print_line "· Ensuring /home/student/myjob.txt does not exist on servera" "SUCCESS"
-sleep 2
-print_line "· Ensuring /home/student/tea.txt does not exist on servera" "SUCCESS"
-sleep 2
-print_line "· Ensuring /home/student/cookies.txt does not exist on servera" "SUCCESS"
+print_line "· Generate checked item from servera" "SUCCESS"
 echo ""
 
-
-if [ "$LOG_LEVEL" = "info" ] && [ -f "/tmp/$LAB_NAME.log" ]; then	
+if [ "$LOG_LEVEL" = "info" ] && [ -f "/tmp/$LAB_NAME.log" ]; then
 	cat /tmp/$LAB_NAME.log | tail -3
 fi
 
+printf "%-5s \n"
+
+if [ -f "/tmp/$LAB_NAME/simulate.log" ]; then
+
+	filtered=$(awk -F: '{ NF--; print $0 }' OFS=: /tmp/$LAB_NAME/simulate.log)
+
+	checked=$(printf '%s\n' "$filtered" | awk -F: '{last=$NF; NF--; print $0 "|" last}' OFS=:)
+
+	while IFS='|' read -r p1 p2; do
+    		print_line "· $p1" "$p2"
+    		sleep 1
+	done <<< "$checked"
+fi
