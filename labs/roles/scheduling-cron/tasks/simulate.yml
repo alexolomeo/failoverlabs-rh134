@@ -22,8 +22,13 @@
 
   ignore_errors: yes  # No interrumpir la ejecución si alguna sesión no se puede matar
 
-- name: SIMULATE LAB - Forzar la actualización del historial
+- name: SIMULATE LAB - Forzar la actualización del historial root user
   become: yes
+  ansible.builtin.shell:
+    cmd: "history -a && history -n"
+
+- name: SIMULATE LAB - Forzar la actualización del historial student user
+  become_user: student
   ansible.builtin.shell:
     cmd: "history -a && history -n"
 

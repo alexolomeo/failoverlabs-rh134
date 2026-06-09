@@ -8,7 +8,7 @@
 - name: SIMULATE LAB - Obtener historial de comandos
   become_user: student
   ansible.builtin.shell: |
-    cat /home/student/.bash_history
+    cat /home/student/.bash_history || true
   register: history_output
 
 - name: SIMULATE LAB - Escribir historial en archivo log

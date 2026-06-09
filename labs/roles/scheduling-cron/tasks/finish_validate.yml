@@ -1,8 +1,11 @@
 ---
 
-- name: FINISH VALIDATE LAB - Eliminar la lista cronjobs generada
-  shell: "cron -r"
-  changed_when: false
+- name: FINISH VALIDATE LAB - Eliminar toda la lista de cron
+  command: crontab -r
+  register: cron_delete
+  failed_when: >
+    cron_delete.rc != 0 and
+    'no crontab for' not in cron_delete.stderr
 
 - name: FINISH VALIDATE LAB - Verificar y remover archivos generados
   ansible.builtin.file:

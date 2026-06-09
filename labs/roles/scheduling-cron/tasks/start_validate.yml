@@ -1,9 +1,11 @@
 ---
 
 - name: START VALIDATE LAB - Eliminar toda la lista de cron
-  become_user: student
-  shell: "cron -r"
-  changed_when: false
+  command: crontab -r
+  register: cron_delete
+  failed_when: >
+    cron_delete.rc != 0 and
+    'no crontab for' not in cron_delete.stderr
 
 - name: START VALIDATE LAB - Verificar y remover archivos generados
   ansible.builtin.file:

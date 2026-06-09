@@ -1,24 +1,24 @@
 ---
 
-- name: SIMULATE LAB - Forzar la escritura del history en el file .bash_history
+- name: SIMULATE VALIDATE LAB - Forzar la escritura del history en el file .bash_history
   become_user: student
   ansible.builtin.shell: 
     cmd: history -a  # Fuerza la escritura de la sesión actual al archivo
 
-- name: SIMULATE LAB - Obtener historial de comandos
+- name: SIMULATE VALIDATE LAB - Obtener historial de comandos
   become_user: student
   ansible.builtin.shell: |
-    cat /home/student/.bash_history
+    cat /home/student/.bash_history || true
   register: history_output
 
-- name: SIMULATE LAB - Escribir historial en archivo log
+- name: SIMULATE VALIDATE LAB - Escribir historial en archivo log
   become: yes
   ansible.builtin.copy:
     content: "{{ history_output.stdout }}"
     dest: "{{ failover_remote_validator_temp }}/history.log"
     mode: '0644'
 
-- name: SIMULATE LAB - Validar comandos en el historial
+- name: SIMULATE VALIDATE LAB - Validar comandos en el historial
   ansible.builtin.lineinfile:
     path: "{{ failover_remote_validator_temp }}/{{ output_review_file }}"
     create: yes
@@ -26,14 +26,16 @@
       {{ item.id }}:{{ item.label }}: (CHECKED) :{{ 'SUCCESS' if (history_output.stdout | regex_search(item.regex, multiline=True)) else 'FAILED' }}:{{ item.weight }}
   loop: "{{ validator_history }}"
 
-- name: SIMULATE LAB - Verificar que cron -l devuelva el jobs configurado
+- name: SIMULATE VALIDATE LAB - Verificar que crontab -l devuelva el jobs configurado
   become: yes
   ansible.builtin.command:
-    cmd: cron -l
+    cmd: crontab -l
   register: cron_output
-  changed_when: false
+  failed_when: >
+    cron_output.rc != 0 and
+    'no crontab for' not in cron_output.stderr
 
-- name: "SIMULATE LAB - Procesar resultados de validación"
+- name: "SIMULATE VALIDATE LAB - Procesar resultados de validación"
   set_fact:
     at_results: >-
       {%- set content = cron_output.stdout -%}
@@ -45,7 +47,7 @@
   loop: "{{ validator_cron }}"
   register: processed_lines
 
-- name: "SIMULATE LAB - Registrar resultados en log"
+- name: "SIMULATE VALIDATE LAB - Registrar resultados en log"
   become: yes
   ansible.builtin.lineinfile:
     path: "{{ failover_remote_validator_temp }}/{{ output_review_file }}"
@@ -54,13 +56,13 @@
     mode: '0644'
   loop: "{{ processed_lines.results }}"
 
-- name: "SIMULATE LAB - Obtener lista de archivos existentes en el sistema con validator_file"
+- name: "SIMULATE VALIDATE LAB - Obtener lista de archivos existentes en el sistema con validator_file"
   ansible.builtin.shell: "find /home/student -maxdepth 2 -type f"
   register: files_output
   changed_when: false
   failed_when: false
 
-- name: "SIMULATE LAB - Procesar resultados de validación validator_file"
+- name: "SIMULATE VALIDATE LAB - Procesar resultados de validación validator_file"
   ansible.builtin.set_fact:
     file_results_line: >-
       {%- set content = files_output.stdout -%}
@@ -72,7 +74,7 @@
   loop: "{{ validator_file }}"
   register: processed_lines
 
-- name: "SIMULATE LAB - Registrar resultados en log validator_file"
+- name: "SIMULATE VALIDATE LAB - Registrar resultados en log validator_file"
   become: yes
   ansible.builtin.lineinfile:
     path: "{{ failover_remote_validator_temp }}/{{ output_review_file }}"
